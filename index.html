@@ -37,6 +37,299 @@
             background-color: rgba(0, 0, 0, 0.5); display: flex;
             justify-content: center; align-items: center; z-index: 50;
         }
+        .dream-completed-card {
+            border-left: 4px solid #22c55e;
+            background-color: #f0fdf4;
+        }
+        /* Estilos para a funcionalidade de minimizar */
+        .collapsible-content {
+            max-height: 1000px; /* Altura máxima para permitir a animação */
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out, margin 0.5s ease-in-out;
+        }
+        .collapsible-content.collapsed {
+            max-height: 0;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+        }
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        .toggle-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+    </style>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">Minhas Finanças</h1>
+            <p class="text-gray-600 mt-2">Organize suas finanças e realize seus sonhos.</p>
+        </header>
+
+        <!-- Navegação por Abas -->
+        <nav class="flex justify-center space-x-4 mb-8">
+            <button id="tab-geral" class="tab-btn active"><i class="fas fa-wallet mr-2"></i>Visão Geral</button>
+            <button id="tab-sonhos" class="tab-btn"><i class="fas fa-star mr-2"></i>Meus Sonhos</button>
+        </nav>
+
+        <!-- Conteúdo da Aba: Visão Geral -->
+        <div id="view-geral">
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="card p-6 flex items-center justify-between">
+                    <div><h2 class="text-lg font-semibold text-gray-500">Receitas</h2><p id="total-receitas" class="text-3xl font-bold text-green-600">R$ 0,00</p></div>
+                    <div class="bg-green-100 p-3 rounded-full"><i class="fas fa-arrow-up text-green-600 fa-2x"></i></div>
+                </div>
+                <div class="card p-6 flex items-center justify-between">
+                    <div><h2 class="text-lg font-semibold text-gray-500">Despesas</h2><p id="total-despesas" class="text-3xl font-bold text-red-600">R$ 0,00</p></div>
+                    <div class="bg-red-100 p-3 rounded-full"><i class="fas fa-arrow-down text-red-600 fa-2x"></i></div>
+                </div>
+                <div class="card p-6 flex items-center justify-between">
+                    <div><h2 class="text-lg font-semibold text-gray-500">Saldo Atual</h2><p id="saldo-atual" class="text-3xl font-bold text-blue-600">R$ 0,00</p></div>
+                     <div class="bg-blue-100 p-3 rounded-full"><i class="fas fa-wallet text-blue-600 fa-2x"></i></div>
+                </div>
+            </section>
+            <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-4">Adicionar Transação</h3>
+                        <form id="transaction-form" class="space-y-4">
+                            <div><label for="descricao" class="block text-sm font-medium">Descrição</label><input type="text" id="descricao" placeholder="Ex: Salário, Aluguel" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></div>
+                            <div><label for="valor" class="block text-sm font-medium">Valor (R$)</label><input type="number" id="valor" step="0.01" placeholder="0,00" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></div>
+                            <div><label class="block text-sm font-medium">Tipo</label><div class="mt-2 flex space-x-4"><label class="flex items-center"><input type="radio" name="tipo" value="receita" class="h-4 w-4" checked><span class="ml-2">Receita</span></label><label class="flex items-center"><input type="radio" name="tipo" value="despesa" class="h-4 w-4"><span class="ml-2">Despesa</span></label></div></div>
+                            <div id="categoria-container" class="hidden"><label for="categoria" class="block text-sm font-medium">Categoria</label><select id="categoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option><option>Saúde</option><option>Outros</option></select></div>
+                            <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Adicionar</button>
+                        </form>
+                    </div>
+                    <div class="card p-6">
+                        <div data-toggle="chart-content" class="flex justify-between items-center cursor-pointer">
+                            <h3 class="text-xl font-bold">Despesas por Categoria</h3>
+                            <i class="fas fa-chevron-down toggle-icon collapsed"></i>
+                        </div>
+                        <div id="chart-content" class="collapsible-content collapsed pt-4" style="height: 250px;">
+                            <canvas id="expense-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-3 card p-6">
+                    <div data-toggle="history-content" class="flex justify-between items-center cursor-pointer">
+                        <h3 class="text-xl font-bold">Histórico de Transações</h3>
+                        <i class="fas fa-chevron-down toggle-icon collapsed"></i>
+                    </div>
+                    <div id="history-content" class="collapsible-content collapsed pt-4">
+                        <ul id="transaction-list" class="space-y-3"></ul>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Conteúdo da Aba: Meus Sonhos -->
+        <div id="view-sonhos" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold">Seus Sonhos e Objetivos</h2>
+                <button id="add-sonho-btn" class="btn-primary font-bold py-2 px-4 rounded-md flex items-center"><i class="fas fa-plus mr-2"></i>Novo Sonho</button>
+            </div>
+            <div id="sonhos-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Cards de sonhos em andamento -->
+            </div>
+
+            <!-- Seção Sonhos Realizados -->
+            <div id="sonhos-realizados-container" class="mt-12 hidden">
+                 <div data-toggle="realizados-content" class="flex justify-between items-center cursor-pointer card p-4 mb-4 bg-green-50 border-l-4 border-green-500">
+                    <h3 class="text-2xl font-bold text-green-800">
+                        <i class="fas fa-trophy mr-2"></i>Sonhos Realizados
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon collapsed"></i>
+                </div>
+                <div id="realizados-content" class="collapsible-content collapsed">
+                     <div id="sonhos-realizados-list" class="space-y-6 pt-4">
+                        <!-- Cards de sonhos realizados -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modais -->
+    <div id="add-sonho-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Qual é o seu novo sonho?</h3><form id="sonho-form"><div class="space-y-4"><div><label for="sonho-nome" class="block text-sm font-medium">Nome do Sonho</label><input type="text" id="sonho-nome" placeholder="Ex: Carro Novo" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-valor" class="block text-sm font-medium">Valor Total (R$)</label><input type="number" id="sonho-valor" step="0.01" placeholder="60000,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-data" class="block text-sm font-medium">Data Alvo</label><input type="date" id="sonho-data" class="mt-1 block w-full border-gray-300 rounded-md" required></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-sonho-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
+    <div id="add-deposito-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-2">Adicionar Depósito</h3><p class="mb-6 text-gray-600">Para: <span id="deposito-sonho-nome" class="font-semibold"></span></p><form id="deposito-form"><input type="hidden" id="deposito-sonho-id"><div><label for="deposito-valor" class="block text-sm font-medium">Valor (R$)</label><input type="number" id="deposito-valor" step="0.01" placeholder="500,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-deposito-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Adicionar</button></div></form></div></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // =================================================================
+        // INICIALIZAÇÃO E FUNÇÕES GLOBAIS
+        // =================================================================
+        const viewGeral = document.getElementById('view-geral');
+        const viewSonhos = document.getElementById('view-sonhos');
+        const tabGeralBtn = document.getElementById('tab-geral');
+        const tabSonhosBtn = document.getElementById('tab-sonhos');
+
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        let dreams = JSON.parse(localStorage.getItem('dreams')) || [];
+        
+        const saveTransactions = () => localStorage.setItem('transactions', JSON.stringify(transactions));
+        const saveDreams = () => localStorage.setItem('dreams', JSON.stringify(dreams));
+        const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        
+        // =================================================================
+        // LÓGICA DE NAVEGAÇÃO POR ABAS
+        // =================================================================
+        tabGeralBtn.addEventListener('click', () => {
+            viewGeral.classList.remove('hidden'); viewSonhos.classList.add('hidden');
+            tabGeralBtn.classList.add('active'); tabSonhosBtn.classList.remove('active');
+        });
+        tabSonhosBtn.addEventListener('click', () => {
+            viewGeral.classList.add('hidden'); viewSonhos.classList.remove('hidden');
+            tabGeralBtn.classList.remove('active'); tabSonhosBtn.classList.add('active');
+            renderSonhosList();
+        });
+
+        // =================================================================
+        // LÓGICA DA ABA "VISÃO GERAL"
+        // =================================================================
+        const transactionForm = document.getElementById('transaction-form');
+        const totalReceitasEl = document.getElementById('total-receitas');
+        const totalDespesasEl = document.getElementById('total-despesas');
+        const saldoAtualEl = document.getElementById('saldo-atual');
+        const transactionListEl = document.getElementById('transaction-list');
+        const categoriaContainer = document.getElementById('categoria-container');
+        const expenseChartCanvas = document.getElementById('expense-chart');
+        let expenseChart;
+
+        const renderTransactions = () => {
+            transactionListEl.innerHTML = "";
+            if (transactions.length === 0) {
+                transactionListEl.innerHTML = '<li class="text-center text-gray-500 mt-4">Nenhuma transação registrada.</li>';
+                return;
+            }
+            transactions.forEach(t => {
+                const isReceita = t.tipo === "receita";
+                const li = document.createElement("li");
+                li.className = `flex justify-between items-center p-3 rounded-md ${isReceita ? "bg-green-50" : "bg-red-50"}`;
+                li.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="mr-3 p-2 rounded-full ${isReceita ? "bg-green-200" : "bg-red-200"}">
+                            <i class="fas ${isReceita ? "fa-plus text-green-700" : "fa-minus text-red-700"}"></i>
+                        </div>
+                        <div>
+                            <span class="font-semibold">${t.descricao}</span>
+                            ${isReceita ? "" : `<span class="block text-sm text-gray-500">${t.categoria}</span>`}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold ${isReceita ? "text-green-600" : "text-red-600"}">${formatCurrency(t.valor)}</span>
+                        <button onclick="deleteTransaction(${t.id})" class="ml-4 text-gray-400 hover:text-red-600">&times;</button>
+                    </div>`;
+                transactionListEl.appendChild(li);
+            });
+        };
+
+        const updateSummary = () => {
+            const totalReceitas = transactions.filter(t => t.tipo === "receita").reduce((acc, t) => acc + t.valor, 0);
+            const totalDespesas = transactions.filter(t => t.tipo === "despesa").reduce((acc, t) => acc + t.valor, 0);
+            const saldoAtual = totalReceitas - totalDespesas;
+            totalReceitasEl.textContent = formatCurrency(totalReceitas);
+            totalDespesasEl.textContent = formatCurrency(totalDespesas);
+            saldoAtualEl.textContent = formatCurrency(saldoAtual);
+            saldoAtualEl.classList.toggle("text-red-600", saldoAtual < 0);
+            saldoAtualEl.classList.toggle("text-blue-600", saldoAtual >= 0);
+        };
+
+        const updateExpenseChart = () => {
+            const expenseData = transactions.filter(t => t.tipo === "despesa").reduce((acc, t) => {
+                acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
+                return acc;
+            }, {});
+            if (expenseChart) { expenseChart.destroy(); }
+            expenseChart = new Chart(expenseChartCanvas, {
+                type: "doughnut",
+                data: {
+                    labels: Object.keys(expenseData),
+                    datasets: [{
+                        data: Object.values(expenseData),
+                        backgroundColor: ["#4f46e5", "#f97316", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6"],
+                        borderColor: "#ffffff",
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: "bottom" } }
+                }
+            });
+        };
+        
+        const addTransaction = (e) => {
+            e.preventDefault();
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            const transaction = {
+                id: Date.now(),
+                descricao: document.getElementById("descricao").value,
+                valor: parseFloat(document.getElementById("valor").value),
+                tipo: tipo,
+                categoria: tipo === 'despesa' ? document.getElementById("categoria").value : null
+            };
+            transactions.push(transaction);
+            saveTransactions();
+            updateUIGeral();
+            transactionForm.reset();
+            // Resetar o formulário para o estado inicial
+            document.querySelector('input[name="tipo"][value="receita"]').checked = true;
+            categoriaContainer.classList.add('hidden');
+        };
+
+        window.deleteTransaction = (id) => {
+            transactions = transactions.filter(t => t.id !== id);
+            saveTransactions();
+            updateUIGeral();
+        };
+
+        const updateUIGeral = () => {
+            updateSummary();
+            renderTransactions();
+            updateExpenseChart();
+        };
+
+        transactionForm.addEventListener("submit", addTransaction);
+
+        document.querySelectorAll('input[name="tipo"]').forEach(radio => {
+            radio.addEventListener("change", (e) => {
+                if (e.target.value === "despesa") {
+                    categoriaContainer.classList.remove('hidden');
+                } else {
+                    categoriaContainer.classList.add('hidden');
+                }
+            });
+        });
+
+        // =================================================================
+        // LÓGICA PARA MINIMIZAR/EXPANDIR SEÇÕES
+        // =================================================================
+        document.addEventListener('click', (e) => {
+            const header = e.target.closest('[data-toggle]');
+            if (!header) return;
+            const contentId = header.getAttribute('data-toggle');
+            const contentElement = document.getElementById(contentId);
+            const iconElement = header.querySelector('.toggle-icon');
+            contentElement.classList.toggle('collapsed');
+            iconElement.classList.toggle('collapsed');
+        });
+
+        // =================================================================
+        // LÓGICA DA ABA "MEUS SONHOS"
+        // =================================================================
+        const sonosListEl = document.getElementById('sonhos-list');
+        const addSonhoModal = document.getElementById('add-sonho-mod            background-color: rgba(0, 0, 0, 0.5); display: flex;
+            justify-content: center; align-items: center; z-index: 50;
+        }
         .dream-completed {
             border: 2px solid #22c55e;
             background-color: #f0fdf4;
@@ -300,3 +593,4 @@
     </script>
 </body>
 </html>
+
