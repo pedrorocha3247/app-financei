@@ -161,55 +161,88 @@
     <div id="add-deposito-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-2">Adicionar Depósito</h3><p class="mb-6 text-gray-600">Para: <span id="deposito-sonho-nome" class="font-semibold"></span></p><form id="deposito-form"><input type="hidden" id="deposito-sonho-id"><div><label for="deposito-valor" class="block text-sm font-medium">Valor (R$)</label><input type="number" id="deposito-valor" step="0.01" placeholder="500,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-deposito-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Adicionar</button></div></form></div></div>
 
     <script>
+    // Espera o documento HTML ser completamente carregado para executar o script
     document.addEventListener('DOMContentLoaded', () => {
-        // =================================================================
-        // INICIALIZAÇÃO E FUNÇÕES GLOBAIS
-        // =================================================================
-        const viewGeral = document.getElementById('view-geral');
-        const viewSonhos = document.getElementById('view-sonhos');
-        const tabGeralBtn = document.getElementById('tab-geral');
-        const tabSonhosBtn = document.getElementById('tab-sonhos');
-
-        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-        let dreams = JSON.parse(localStorage.getItem('dreams')) || [];
         
-        const saveTransactions = () => localStorage.setItem('transactions', JSON.stringify(transactions));
-        const saveDreams = () => localStorage.setItem('dreams', JSON.stringify(dreams));
+        // =================================================================
+        // 1. ESTADO DA APLICAÇÃO E FUNÇÕES GLOBAIS
+        // =================================================================
+
+        // Carrega os dados do armazenamento local ou inicia com arrays vazios
+        let transactions = JSON.parse(localStorage.getItem('finance_transactions_v9')) || [];
+        let dreams = JSON.parse(localStorage.getItem('finance_dreams_v9')) || [];
+        
+        // Funções para salvar os dados no armazenamento local
+        const saveTransactions = () => localStorage.setItem('finance_transactions_v9', JSON.stringify(transactions));
+        const saveDreams = () => localStorage.setItem('finance_dreams_v9', JSON.stringify(dreams));
+        
+        // Funções de formatação para moeda e data
         const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
         
         // =================================================================
-        // LÓGICA DE NAVEGAÇÃO POR ABAS
+        // 2. SELETORES DE ELEMENTOS DO DOM
         // =================================================================
-        tabGeralBtn.addEventListener('click', () => {
-            viewGeral.classList.remove('hidden'); viewSonhos.classList.add('hidden');
-            tabGeralBtn.classList.add('active'); tabSonhosBtn.classList.remove('active');
-        });
-        tabSonhosBtn.addEventListener('click', () => {
-            viewGeral.classList.add('hidden'); viewSonhos.classList.remove('hidden');
-            tabGeralBtn.classList.remove('active'); tabSonhosBtn.classList.add('active');
-            renderSonhosList();
-        });
+
+        // Agrupa todos os seletores de elementos em um objeto para fácil acesso
+        const elements = {
+            viewGeral: document.getElementById('view-geral'),
+            viewSonhos: document.getElementById('view-sonhos'),
+            tabGeralBtn: document.getElementById('tab-geral'),
+            tabSonhosBtn: document.getElementById('tab-sonhos'),
+            transactionForm: document.getElementById('transaction-form'),
+            totalReceitasEl: document.getElementById('total-receitas'),
+            totalDespesasEl: document.getElementById('total-despesas'),
+            saldoAtualEl: document.getElementById('saldo-atual'),
+            transactionListEl: document.getElementById('transaction-list'),
+            categoriaContainer: document.getElementById('categoria-container'),
+            expenseChartCanvas: document.getElementById('expense-chart'),
+            sonosListEl: document.getElementById('sonhos-list'),
+            addSonhoModal: document.getElementById('add-sonho-modal'),
+            sonhoForm: document.getElementById('sonho-form'),
+            addDepositoModal: document.getElementById('add-deposito-modal'),
+            depositoForm: document.getElementById('deposito-form'),
+            sonhosRealizadosContainer: document.getElementById('sonhos-realizados-container'),
+            sonosRealizadosListEl: document.getElementById('sonhos-realizados-list'),
+            addSonhoBtn: document.getElementById('add-sonho-btn'),
+            cancelSonhoBtn: document.getElementById('cancel-sonho-btn'),
+            cancelDepositoBtn: document.getElementById('cancel-deposito-btn'),
+        };
+
+        let expenseChart; // Variável para a instância do gráfico
 
         // =================================================================
-        // LÓGICA DA ABA "VISÃO GERAL"
+        // 3. FUNÇÕES DE ATUALIZAÇÃO DA INTERFACE (UI)
         // =================================================================
-        const transactionForm = document.getElementById('transaction-form');
-        const totalReceitasEl = document.getElementById('total-receitas');
-        const totalDespesasEl = document.getElementById('total-despesas');
-        const saldoAtualEl = document.getElementById('saldo-atual');
-        const transactionListEl = document.getElementById('transaction-list');
-        const categoriaContainer = document.getElementById('categoria-container');
-        const expenseChartCanvas = document.getElementById('expense-chart');
-        let expenseChart;
 
+        // Atualiza todos os componentes da aba "Visão Geral"
+        const updateUIGeral = () => {
+            updateSummary();
+            renderTransactions();
+            updateExpenseChart();
+        };
+
+        // Atualiza o resumo de receitas, despesas e saldo
+        const updateSummary = () => {
+            const totalReceitas = transactions.filter(t => t.tipo === "receita").reduce((acc, t) => acc + t.valor, 0);
+            const totalDespesas = transactions.filter(t => t.tipo === "despesa").reduce((acc, t) => acc + t.valor, 0);
+            const saldoAtual = totalReceitas - totalDespesas;
+            elements.totalReceitasEl.textContent = formatCurrency(totalReceitas);
+            elements.totalDespesasEl.textContent = formatCurrency(totalDespesas);
+            elements.saldoAtualEl.textContent = formatCurrency(saldoAtual);
+            elements.saldoAtualEl.classList.toggle("text-red-600", saldoAtual < 0);
+            elements.saldoAtualEl.classList.toggle("text-blue-600", saldoAtual >= 0);
+        };
+
+        // Renderiza a lista de transações
         const renderTransactions = () => {
-            transactionListEl.innerHTML = "";
+            elements.transactionListEl.innerHTML = "";
             if (transactions.length === 0) {
-                transactionListEl.innerHTML = '<li class="text-center text-gray-500 mt-4">Nenhuma transação registrada.</li>';
+                elements.transactionListEl.innerHTML = '<li class="text-center text-gray-500 mt-4">Nenhuma transação registrada.</li>';
                 return;
             }
-            transactions.forEach(t => {
+            // Cria um item na lista para cada transação
+            transactions.slice().reverse().forEach(t => {
                 const isReceita = t.tipo === "receita";
                 const li = document.createElement("li");
                 li.className = `flex justify-between items-center p-3 rounded-md ${isReceita ? "bg-green-50" : "bg-red-50"}`;
@@ -225,30 +258,22 @@
                     </div>
                     <div class="text-right">
                         <span class="font-bold ${isReceita ? "text-green-600" : "text-red-600"}">${formatCurrency(t.valor)}</span>
-                        <button onclick="deleteTransaction(${t.id})" class="ml-4 text-gray-400 hover:text-red-600">&times;</button>
+                        <button onclick="window.deleteTransaction(${t.id})" class="ml-4 text-gray-400 hover:text-red-600">&times;</button>
                     </div>`;
-                transactionListEl.appendChild(li);
+                elements.transactionListEl.appendChild(li);
             });
         };
 
-        const updateSummary = () => {
-            const totalReceitas = transactions.filter(t => t.tipo === "receita").reduce((acc, t) => acc + t.valor, 0);
-            const totalDespesas = transactions.filter(t => t.tipo === "despesa").reduce((acc, t) => acc + t.valor, 0);
-            const saldoAtual = totalReceitas - totalDespesas;
-            totalReceitasEl.textContent = formatCurrency(totalReceitas);
-            totalDespesasEl.textContent = formatCurrency(totalDespesas);
-            saldoAtualEl.textContent = formatCurrency(saldoAtual);
-            saldoAtualEl.classList.toggle("text-red-600", saldoAtual < 0);
-            saldoAtualEl.classList.toggle("text-blue-600", saldoAtual >= 0);
-        };
-
+        // Atualiza o gráfico de despesas
         const updateExpenseChart = () => {
             const expenseData = transactions.filter(t => t.tipo === "despesa").reduce((acc, t) => {
                 acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
                 return acc;
             }, {});
-            if (expenseChart) { expenseChart.destroy(); }
-            expenseChart = new Chart(expenseChartCanvas, {
+            if (expenseChart) {
+                expenseChart.destroy();
+            }
+            expenseChart = new Chart(elements.expenseChartCanvas, {
                 type: "doughnut",
                 data: {
                     labels: Object.keys(expenseData),
@@ -259,98 +284,28 @@
                         borderWidth: 2
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: "bottom" } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
             });
         };
-        
-        const addTransaction = (e) => {
-            e.preventDefault();
-            const tipo = document.querySelector('input[name="tipo"]:checked').value;
-            const transaction = {
-                id: Date.now(),
-                descricao: document.getElementById("descricao").value,
-                valor: parseFloat(document.getElementById("valor").value),
-                tipo: tipo,
-                categoria: tipo === 'despesa' ? document.getElementById("categoria").value : null
-            };
-            transactions.push(transaction);
-            saveTransactions();
-            updateUIGeral();
-            transactionForm.reset();
-            // Resetar o formulário para o estado inicial
-            document.querySelector('input[name="tipo"][value="receita"]').checked = true;
-            categoriaContainer.classList.add('hidden');
-        };
 
-        window.deleteTransaction = (id) => {
-            transactions = transactions.filter(t => t.id !== id);
-            saveTransactions();
-            updateUIGeral();
-        };
-
-        const updateUIGeral = () => {
-            updateSummary();
-            renderTransactions();
-            updateExpenseChart();
-        };
-
-        transactionForm.addEventListener("submit", addTransaction);
-
-        document.querySelectorAll('input[name="tipo"]').forEach(radio => {
-            radio.addEventListener("change", (e) => {
-                if (e.target.value === "despesa") {
-                    categoriaContainer.classList.remove('hidden');
-                } else {
-                    categoriaContainer.classList.add('hidden');
-                }
-            });
-        });
-
-        // =================================================================
-        // LÓGICA PARA MINIMIZAR/EXPANDIR SEÇÕES
-        // =================================================================
-        document.addEventListener('click', (e) => {
-            const header = e.target.closest('[data-toggle]');
-            if (!header) return;
-            const contentId = header.getAttribute('data-toggle');
-            const contentElement = document.getElementById(contentId);
-            const iconElement = header.querySelector('.toggle-icon');
-            contentElement.classList.toggle('collapsed');
-            iconElement.classList.toggle('collapsed');
-        });
-
-        // =================================================================
-        // LÓGICA DA ABA "MEUS SONHOS"
-        // =================================================================
-        const sonosListEl = document.getElementById('sonhos-list');
-        const addSonhoModal = document.getElementById('add-sonho-modal');
-        const sonhoForm = document.getElementById('sonho-form');
-        const addDepositoModal = document.getElementById('add-deposito-modal');
-        const depositoForm = document.getElementById('deposito-form');
-        const sonhosRealizadosContainer = document.getElementById('sonhos-realizados-container');
-        const sonosRealizadosListEl = document.getElementById('sonhos-realizados-list');
-
+        // Renderiza a lista de sonhos (em andamento e concluídos)
         const renderSonhosList = () => {
             const ongoingDreams = dreams.filter(d => !d.completed);
             const completedDreams = dreams.filter(d => d.completed);
 
-            sonosListEl.innerHTML = '';
+            elements.sonosListEl.innerHTML = '';
             if (ongoingDreams.length === 0) {
-                sonosListEl.innerHTML = `<div class="col-span-full text-center text-gray-500 mt-8"><i class="fas fa-cloud-moon fa-3x mb-4"></i><p class="text-xl">Você não tem sonhos em andamento.</p><p>Clique em "Novo Sonho" para começar a planejar!</p></div>`;
+                elements.sonosListEl.innerHTML = `<div class="col-span-full text-center text-gray-500 mt-8"><i class="fas fa-cloud-moon fa-3x mb-4"></i><p class="text-xl">Você não tem sonhos em andamento.</p><p>Clique em "Novo Sonho" para começar a planejar!</p></div>`;
             } else {
                 ongoingDreams.forEach(renderOngoingDreamCard);
             }
 
-            sonosRealizadosListEl.innerHTML = '';
+            elements.sonosRealizadosListEl.innerHTML = '';
             if (completedDreams.length > 0) {
-                sonhosRealizadosContainer.classList.remove('hidden');
+                elements.sonhosRealizadosContainer.classList.remove('hidden');
                 completedDreams.forEach(renderCompletedDreamCard);
             } else {
-                sonhosRealizadosContainer.classList.add('hidden');
+                elements.sonhosRealizadosContainer.classList.add('hidden');
             }
         };
 
@@ -362,109 +317,72 @@
             const dataAlvo = new Date(dream.dataAlvo);
             const mesesRestantes = (dataAlvo.getFullYear() - hoje.getFullYear()) * 12 + (dataAlvo.getMonth() - hoje.getMonth());
             const idealPorMes = mesesRestantes > 0 ? restante / mesesRestantes : 0;
-
             const card = document.createElement('div');
             card.className = `card p-6 space-y-4`;
-            card.innerHTML = `
-                <div>
-                    <div class="flex justify-between items-start">
-                        <h4 class="text-2xl font-bold text-gray-800">${dream.nome}</h4>
-                        <button onclick="deleteSonho(${dream.id})" class="text-gray-400 hover:text-red-600">&times;</button>
-                    </div>
-                    <p class="text-gray-500">Objetivo: <span class="font-semibold">${formatCurrency(dream.valor)}</span></p>
-                </div>
-                <div>
-                    <div class="flex justify-between mb-1"><span class="font-medium text-indigo-700">${formatCurrency(totalDepositado)}</span><span class="font-medium text-indigo-700">${progresso.toFixed(1)}%</span></div>
-                    <div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-indigo-600 h-4 rounded-full" style="width: ${progresso}%"></div></div>
-                    <p class="text-sm text-right text-gray-600 mt-1">Faltam ${formatCurrency(Math.max(0, restante))}</p>
-                </div>
-                <div class="border-t pt-4 space-y-3">
-                    <div class="flex justify-between text-sm"><span class="text-gray-500">Cadastrado em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-gray-500">Ideal por mês:</span><span class="font-semibold">${formatCurrency(Math.max(0, idealPorMes))}</span></div>
-                </div>
-                <div class="h-24"><canvas id="chart-sonho-${dream.id}"></canvas></div>
-                <button onclick="openDepositoModal(${dream.id})" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center"><i class="fas fa-plus-circle mr-2"></i>Adicionar Depósito</button>
-            `;
-            sonosListEl.appendChild(card);
-
-            if (dream.deposits.length > 0) {
-                const chartCtx = document.getElementById(`chart-sonho-${dream.id}`).getContext('2d');
-                let cumulativeAmount = 0;
-                const chartData = dream.deposits.map(d => cumulativeAmount += d.valor);
-                const chartLabels = dream.deposits.map(d => formatDate(d.data));
-                new Chart(chartCtx, { type: 'line', data: { labels: chartLabels, datasets: [{ label: 'Evolução', data: chartData, backgroundColor: 'rgba(79, 70, 229, 0.1)', borderColor: '#4f46e5', borderWidth: 2, tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } } });
-            }
+            card.innerHTML = `<div><div class="flex justify-between items-start"><h4 class="text-2xl font-bold text-gray-800">${dream.nome}</h4><button onclick="window.deleteSonho(${dream.id})" class="text-gray-400 hover:text-red-600">&times;</button></div><p class="text-gray-500">Objetivo: <span class="font-semibold">${formatCurrency(dream.valor)}</span></p></div><div><div class="flex justify-between mb-1"><span class="font-medium text-indigo-700">${formatCurrency(totalDepositado)}</span><span class="font-medium text-indigo-700">${progresso.toFixed(1)}%</span></div><div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-indigo-600 h-4 rounded-full" style="width: ${progresso}%"></div></div><p class="text-sm text-right text-gray-600 mt-1">Faltam ${formatCurrency(Math.max(0, restante))}</p></div><div class="border-t pt-4 space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Cadastrado em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Ideal por mês:</span><span class="font-semibold">${formatCurrency(Math.max(0, idealPorMes))}</span></div></div><div class="h-24"><canvas id="chart-sonho-${dream.id}"></canvas></div><button onclick="window.openDepositoModal(${dream.id})" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center"><i class="fas fa-plus-circle mr-2"></i>Adicionar Depósito</button>`;
+            elements.sonosListEl.appendChild(card);
+            if (dream.deposits.length > 0) { const chartCtx = document.getElementById(`chart-sonho-${dream.id}`).getContext('2d'); let cumulativeAmount = 0; const chartData = dream.deposits.map(d => cumulativeAmount += d.valor); const chartLabels = dream.deposits.map(d => formatDate(d.data)); new Chart(chartCtx, { type: 'line', data: { labels: chartLabels, datasets: [{ label: 'Evolução', data: chartData, backgroundColor: 'rgba(79, 70, 229, 0.1)', borderColor: '#4f46e5', borderWidth: 2, tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } } }); }
         };
 
         const renderCompletedDreamCard = (dream) => {
             let depositsHTML = dream.deposits.map(d => `<li class="flex justify-between text-sm"><span class="text-gray-600">${formatDate(d.data)}</span><span class="font-medium text-green-700">+ ${formatCurrency(d.valor)}</span></li>`).join('');
             const card = document.createElement('div');
             card.className = 'card dream-completed-card p-6';
-            card.innerHTML = `
-                <div class="flex justify-between items-center mb-3">
-                    <h4 class="text-2xl font-bold text-green-800">${dream.nome}</h4>
-                    <span class="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full"><i class="fas fa-check-circle mr-1"></i>Concluído!</span>
-                </div>
-                <div class="space-y-3">
-                    <div class="flex justify-between text-sm"><span class="text-gray-500">Valor Total:</span><span class="font-semibold">${formatCurrency(dream.valor)}</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-gray-500">Data de Conclusão:</span><span class="font-semibold">${formatDate(dream.deposits[dream.deposits.length - 1].data)}</span></div>
-                    <div class="border-t pt-3">
-                        <p class="font-semibold mb-2">Histórico de Depósitos:</p>
-                        <ul class="space-y-1 max-h-32 overflow-y-auto pr-2">${depositsHTML}</ul>
-                    </div>
-                </div>
-            `;
-            sonosRealizadosListEl.appendChild(card);
+            card.innerHTML = `<div class="flex justify-between items-center mb-3"><h4 class="text-2xl font-bold text-green-800">${dream.nome}</h4><span class="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full"><i class="fas fa-check-circle mr-1"></i>Concluído!</span></div><div class="space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Valor Total:</span><span class="font-semibold">${formatCurrency(dream.valor)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Data de Conclusão:</span><span class="font-semibold">${formatDate(dream.deposits[dream.deposits.length - 1].data)}</span></div><div class="border-t pt-3"><p class="font-semibold mb-2">Histórico de Depósitos:</p><ul class="space-y-1 max-h-32 overflow-y-auto pr-2">${depositsHTML}</ul></div></div>`;
+            elements.sonosRealizadosListEl.appendChild(card);
         };
+
+        // =================================================================
+        // 4. MANIPULADORES DE EVENTOS (EVENT HANDLERS)
+        // =================================================================
+
+        const handleAddTransaction = (event) => {
+            event.preventDefault();
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            const transaction = { id: Date.now(), descricao: document.getElementById("descricao").value, valor: parseFloat(document.getElementById("valor").value), tipo: tipo, categoria: tipo === 'despesa' ? document.getElementById("categoria").value : null };
+            if (!transaction.descricao || isNaN(transaction.valor) || transaction.valor <= 0) return;
+            transactions.push(transaction);
+            saveTransactions();
+            updateUIGeral();
+            elements.transactionForm.reset();
+            document.querySelector('input[name="tipo"][value="receita"]').checked = true;
+            elements.categoriaContainer.classList.add('hidden');
+        };
+
+        window.deleteTransaction = (id) => { transactions = transactions.filter(t => t.id !== id); saveTransactions(); updateUIGeral(); };
+        window.deleteSonho = (id) => { if (confirm('Tem certeza que deseja apagar este sonho? A ação não pode ser desfeita.')) { dreams = dreams.filter(d => d.id !== id); saveDreams(); renderSonhosList(); } };
+        window.openDepositoModal = (id) => { const dream = dreams.find(d => d.id === id); document.getElementById('deposito-sonho-nome').textContent = dream.nome; document.getElementById('deposito-sonho-id').value = id; elements.addDepositoModal.classList.remove('hidden'); };
+
+        const handleTipoChange = (event) => { if (event.target.value === "despesa") { elements.categoriaContainer.classList.remove('hidden'); } else { elements.categoriaContainer.classList.add('hidden'); } };
         
-        document.getElementById('add-sonho-btn').addEventListener('click', () => addSonhoModal.classList.remove('hidden'));
-        document.getElementById('cancel-sonho-btn').addEventListener('click', () => addSonhoModal.classList.add('hidden'));
-        document.getElementById('cancel-deposito-btn').addEventListener('click', () => addDepositoModal.classList.add('hidden'));
-
-        window.openDepositoModal = (id) => {
-            const dream = dreams.find(d => d.id === id);
-            document.getElementById('deposito-sonho-nome').textContent = dream.nome;
-            document.getElementById('deposito-sonho-id').value = id;
-            addDepositoModal.classList.remove('hidden');
-        };
-
-        sonhoForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            dreams.push({ id: Date.now(), nome: document.getElementById('sonho-nome').value, valor: parseFloat(document.getElementById('sonho-valor').value), dataAlvo: document.getElementById('sonho-data').value, createdAt: new Date().toISOString(), deposits: [], completed: false });
-            saveDreams(); renderSonhosList();
-            sonhoForm.reset(); addSonhoModal.classList.add('hidden');
-        });
-
-        depositoForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const dreamId = parseInt(document.getElementById('deposito-sonho-id').value);
-            const valor = parseFloat(document.getElementById('deposito-valor').value);
-            const dream = dreams.find(d => d.id === dreamId);
-            if (dream) {
-                const totalAnterior = dream.deposits.reduce((acc, d) => acc + d.valor, 0);
-                dream.deposits.push({ id: Date.now(), valor: valor, data: new Date().toISOString() });
-                const totalAtual = totalAnterior + valor;
-                if (totalAtual >= dream.valor && !dream.completed) {
-                    dream.completed = true;
-                    confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
-                }
-                saveDreams(); renderSonhosList();
-            }
-            depositoForm.reset(); addDepositoModal.classList.add('hidden');
-        });
-
-        window.deleteSonho = (id) => {
-            if (confirm('Tem certeza que deseja apagar este sonho? A ação não pode ser desfeita.')) {
-                dreams = dreams.filter(d => d.id !== id);
-                saveDreams(); renderSonhosList();
-            }
-        };
+        const handleToggleClick = (event) => { const header = event.target.closest('[data-toggle]'); if (!header) return; const contentId = header.getAttribute('data-toggle'); const contentElement = document.getElementById(contentId); const iconElement = header.querySelector('.toggle-icon'); contentElement.classList.toggle('collapsed'); iconElement.classList.toggle('collapsed'); };
+        
+        const handleAddSonho = (e) => { e.preventDefault(); dreams.push({ id: Date.now(), nome: document.getElementById('sonho-nome').value, valor: parseFloat(document.getElementById('sonho-valor').value), dataAlvo: document.getElementById('sonho-data').value, createdAt: new Date().toISOString(), deposits: [], completed: false }); saveDreams(); renderSonhosList(); elements.sonhoForm.reset(); elements.addSonhoModal.classList.add('hidden'); };
+        
+        const handleAddDeposito = (e) => { e.preventDefault(); const dreamId = parseInt(document.getElementById('deposito-sonho-id').value); const valor = parseFloat(document.getElementById('deposito-valor').value); const dream = dreams.find(d => d.id === dreamId); if (dream && valor > 0) { const totalAnterior = dream.deposits.reduce((acc, d) => acc + d.valor, 0); dream.deposits.push({ id: Date.now(), valor: valor, data: new Date().toISOString() }); const totalAtual = totalAnterior + valor; if (totalAtual >= dream.valor && !dream.completed) { dream.completed = true; confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } }); } saveDreams(); renderSonhosList(); } elements.depositoForm.reset(); elements.addDepositoModal.classList.add('hidden'); };
 
         // =================================================================
-        // INICIALIZAÇÃO GERAL DA APLICAÇÃO
+        // 5. REGISTRO DE EVENTOS (EVENT LISTENERS)
         // =================================================================
+
+        elements.tabGeralBtn.addEventListener('click', () => { elements.viewGeral.classList.remove('hidden'); elements.viewSonhos.classList.add('hidden'); elements.tabGeralBtn.classList.add('active'); elements.tabSonhosBtn.classList.remove('active'); });
+        elements.tabSonhosBtn.addEventListener('click', () => { elements.viewGeral.classList.add('hidden'); elements.viewSonhos.classList.remove('hidden'); elements.tabGeralBtn.classList.remove('active'); elements.tabSonhosBtn.classList.add('active'); renderSonhosList(); });
+        elements.transactionForm.addEventListener("submit", handleAddTransaction);
+        document.querySelectorAll('input[name="tipo"]').forEach(radio => radio.addEventListener("change", handleTipoChange));
+        document.addEventListener('click', handleToggleClick);
+        elements.addSonhoBtn.addEventListener('click', () => elements.addSonhoModal.classList.remove('hidden'));
+        elements.cancelSonhoBtn.addEventListener('click', () => elements.addSonhoModal.classList.add('hidden'));
+        elements.cancelDepositoBtn.addEventListener('click', () => elements.addDepositoModal.classList.add('hidden'));
+        elements.sonhoForm.addEventListener('submit', handleAddSonho);
+        elements.depositoForm.addEventListener('submit', handleAddDeposito);
+        
+        // =================================================================
+        // 6. INICIALIZAÇÃO DA APLICAÇÃO
+        // =================================================================
+
         updateUIGeral();
-        tabGeralBtn.click();
+        renderSonhosList();
+        elements.tabGeralBtn.click();
     });
     </script>
 </body>
