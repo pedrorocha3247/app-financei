@@ -95,8 +95,8 @@
                      <div class="bg-blue-100 p-3 rounded-full"><i class="fas fa-wallet text-blue-600 fa-2x"></i></div>
                 </div>
             </section>
-            <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                <div class="lg:col-span-2 space-y-8">
+            <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="lg:col-span-1 space-y-8">
                     <div class="card p-6">
                         <h3 class="text-xl font-bold mb-4">Adicionar Transação</h3>
                         <form id="transaction-form" class="space-y-4">
@@ -117,7 +117,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="lg:col-span-3 card p-6">
+                <div class="lg:col-span-1 card p-6">
                     <div data-toggle="history-content" class="flex justify-between items-center cursor-pointer">
                         <h3 class="text-xl font-bold">Histórico de Transações</h3>
                         <i class="fas fa-chevron-down toggle-icon collapsed"></i>
@@ -319,7 +319,7 @@
             const idealPorMes = mesesRestantes > 0 ? restante / mesesRestantes : 0;
             const card = document.createElement('div');
             card.className = `card p-6 space-y-4`;
-            card.innerHTML = `<div><div class="flex justify-between items-start"><h4 class="text-2xl font-bold text-gray-800">${dream.nome}</h4><button onclick="window.deleteSonho(${dream.id})" class="text-gray-400 hover:text-red-600">&times;</button></div><p class="text-gray-500">Objetivo: <span class="font-semibold">${formatCurrency(dream.valor)}</span></p></div><div><div class="flex justify-between mb-1"><span class="font-medium text-indigo-700">${formatCurrency(totalDepositado)}</span><span class="font-medium text-indigo-700">${progresso.toFixed(1)}%</span></div><div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-indigo-600 h-4 rounded-full" style="width: ${progresso}%"></div></div><p class="text-sm text-right text-gray-600 mt-1">Faltam ${formatCurrency(Math.max(0, restante))}</p></div><div class="border-t pt-4 space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Cadastrado em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Ideal por mês:</span><span class="font-semibold">${formatCurrency(Math.max(0, idealPorMes))}</span></div></div><div class="h-24"><canvas id="chart-sonho-${dream.id}"></canvas></div><button onclick="window.openDepositoModal(${dream.id})" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center"><i class="fas fa-plus-circle mr-2"></i>Adicionar Depósito</button>`;
+            card.innerHTML = `<div><div class="flex justify-between items-start"><h4 class="text-2xl font-bold text-gray-800">${dream.nome}</h4><button onclick="window.deleteSonho(${dream.id})" class="text-gray-400 hover:text-red-600">&times;</button></div><p class="text-gray-500">Objetivo: <span class="font-semibold">${formatCurrency(dream.valor)}</span></p></div><div><div class="flex justify-between mb-1"><span class="font-medium text-indigo-700">${formatCurrency(totalDepositado)}</span><span class="font-medium text-indigo-700">${progresso.toFixed(1)}%</span></div><div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-indigo-600 h-4 rounded-full" style="width: ${progresso}%"></div></div><p class="text-sm text-right text-gray-600 mt-1">Faltam ${formatCurrency(Math.max(0, restante))}</p></div><div class="border-t pt-4 space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Iniciada em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Ideal por mês:</span><span class="font-semibold">${formatCurrency(Math.max(0, idealPorMes))}</span></div></div><div class="h-24"><canvas id="chart-sonho-${dream.id}"></canvas></div><button onclick="window.openDepositoModal(${dream.id})" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center"><i class="fas fa-plus-circle mr-2"></i>Adicionar Depósito</button>`;
             elements.sonosListEl.appendChild(card);
             if (dream.deposits.length > 0) { const chartCtx = document.getElementById(`chart-sonho-${dream.id}`).getContext('2d'); let cumulativeAmount = 0; const chartData = dream.deposits.map(d => cumulativeAmount += d.valor); const chartLabels = dream.deposits.map(d => formatDate(d.data)); new Chart(chartCtx, { type: 'line', data: { labels: chartLabels, datasets: [{ label: 'Evolução', data: chartData, backgroundColor: 'rgba(79, 70, 229, 0.1)', borderColor: '#4f46e5', borderWidth: 2, tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } } }); }
         };
@@ -328,7 +328,7 @@
             let depositsHTML = dream.deposits.map(d => `<li class="flex justify-between text-sm"><span class="text-gray-600">${formatDate(d.data)}</span><span class="font-medium text-green-700">+ ${formatCurrency(d.valor)}</span></li>`).join('');
             const card = document.createElement('div');
             card.className = 'card dream-completed-card p-6';
-            card.innerHTML = `<div class="flex justify-between items-center mb-3"><h4 class="text-2xl font-bold text-green-800">${dream.nome}</h4><span class="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full"><i class="fas fa-check-circle mr-1"></i>Concluído!</span></div><div class="space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Valor Total:</span><span class="font-semibold">${formatCurrency(dream.valor)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Data de Conclusão:</span><span class="font-semibold">${formatDate(dream.deposits[dream.deposits.length - 1].data)}</span></div><div class="border-t pt-3"><p class="font-semibold mb-2">Histórico de Depósitos:</p><ul class="space-y-1 max-h-32 overflow-y-auto pr-2">${depositsHTML}</ul></div></div>`;
+            card.innerHTML = `<div class="flex justify-between items-center mb-3"><h4 class="text-2xl font-bold text-green-800">${dream.nome}</h4><span class="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full"><i class="fas fa-check-circle mr-1"></i>Concluído!</span></div><div class="space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Valor Total:</span><span class="font-semibold">${formatCurrency(dream.valor)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Início em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Data de Conclusão:</span><span class="font-semibold">${formatDate(dream.deposits[dream.deposits.length - 1].data)}</span></div><div class="border-t pt-3"><p class="font-semibold mb-2">Histórico de Depósitos:</p><ul class="space-y-1 max-h-32 overflow-y-auto pr-2">${depositsHTML}</ul></div></div>`;
             elements.sonosRealizadosListEl.appendChild(card);
         };
 
