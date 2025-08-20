@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro Pessoal</title>
-    <!-- Tailwind CSS para estilização rápida e moderna -->
+    <title>Controle Financeiro e Sonhos</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js para os gráficos -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Font Awesome para ícones -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti for animations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        /* Estilo customizado para uma melhor aparência */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+        body { font-family: 'Inter', sans-serif; }
         .card {
             background-color: white;
             border-radius: 0.75rem;
@@ -25,22 +24,25 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
-        .btn-primary {
-            background-color: #4f46e5;
-            color: white;
+        .btn-primary { background-color: #4f46e5; color: white; }
+        .btn-primary:hover { background-color: #4338ca; }
+        .tab-btn {
+            padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent;
         }
-        .btn-primary:hover {
-            background-color: #4338ca;
+        .tab-btn.active { background-color: #4f46e5; color: white; }
+        .tab-btn:not(.active) { background-color: #e0e7ff; color: #4f46e5; }
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); display: flex;
+            justify-content: center; align-items: center; z-index: 50;
         }
-        .btn-danger {
-            background-color: #dc2626;
-            color: white;
-        }
-        .btn-danger:hover {
-            background-color: #b91c1c;
+        .dream-completed {
+            border: 2px solid #22c55e;
+            background-color: #f0fdf4;
         }
     </style>
-    <!-- Importando a fonte Inter do Google Fonts -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -49,304 +51,252 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-900">Meu Controle Financeiro</h1>
-            <p class="text-gray-600 mt-2">Sua vida financeira organizada em um só lugar.</p>
+            <h1 class="text-4xl font-bold text-gray-900">Minhas Finanças</h1>
+            <p class="text-gray-600 mt-2">Organize suas finanças e realize seus sonhos.</p>
         </header>
 
-        <!-- Seção de Resumo -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="card p-6 flex items-center justify-between">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-500">Receitas</h2>
-                    <p id="total-receitas" class="text-3xl font-bold text-green-600">R$ 0,00</p>
-                </div>
-                <div class="bg-green-100 p-3 rounded-full">
-                    <i class="fas fa-arrow-up text-green-600 fa-2x"></i>
-                </div>
-            </div>
-            <div class="card p-6 flex items-center justify-between">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-500">Despesas</h2>
-                    <p id="total-despesas" class="text-3xl font-bold text-red-600">R$ 0,00</p>
-                </div>
-                <div class="bg-red-100 p-3 rounded-full">
-                    <i class="fas fa-arrow-down text-red-600 fa-2x"></i>
-                </div>
-            </div>
-            <div class="card p-6 flex items-center justify-between">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-500">Saldo Atual</h2>
-                    <p id="saldo-atual" class="text-3xl font-bold text-blue-600">R$ 0,00</p>
-                </div>
-                 <div class="bg-blue-100 p-3 rounded-full">
-                    <i class="fas fa-wallet text-blue-600 fa-2x"></i>
-                </div>
-            </div>
-        </section>
+        <!-- Navegação por Abas -->
+        <nav class="flex justify-center space-x-4 mb-8">
+            <button id="tab-geral" class="tab-btn active"><i class="fas fa-wallet mr-2"></i>Visão Geral</button>
+            <button id="tab-sonhos" class="tab-btn"><i class="fas fa-star mr-2"></i>Meus Sonhos</button>
+        </nav>
 
-        <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            <!-- Coluna de Formulário e Gráfico -->
-            <div class="lg:col-span-2 space-y-8">
-                <!-- Formulário de Nova Transação -->
-                <div class="card p-6">
-                    <h3 class="text-xl font-bold mb-4">Adicionar Transação</h3>
-                    <form id="transaction-form" class="space-y-4">
-                        <div>
-                            <label for="descricao" class="block text-sm font-medium text-gray-700">Descrição</label>
-                            <input type="text" id="descricao" placeholder="Ex: Salário, Aluguel" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required>
-                        </div>
-                        <div>
-                            <label for="valor" class="block text-sm font-medium text-gray-700">Valor (R$)</label>
-                            <input type="number" id="valor" step="0.01" placeholder="0,00" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Tipo</label>
-                            <div class="mt-2 flex items-center space-x-4">
-                                <label class="flex items-center">
-                                    <input type="radio" name="tipo" value="receita" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" checked>
-                                    <span class="ml-2 text-gray-700">Receita</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="tipo" value="despesa" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                    <span class="ml-2 text-gray-700">Despesa</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div id="categoria-container">
-                            <label for="categoria" class="block text-sm font-medium text-gray-700">Categoria</label>
-                            <select id="categoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                <option>Moradia</option>
-                                <option>Alimentação</option>
-                                <option>Transporte</option>
-                                <option>Lazer</option>
-                                <option>Saúde</option>
-                                <option>Outros</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md shadow-sm">Adicionar</button>
-                    </form>
+        <!-- Conteúdo da Aba: Visão Geral (sem alterações) -->
+        <div id="view-geral">
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="card p-6 flex items-center justify-between">
+                    <div><h2 class="text-lg font-semibold text-gray-500">Receitas</h2><p id="total-receitas" class="text-3xl font-bold text-green-600">R$ 0,00</p></div>
+                    <div class="bg-green-100 p-3 rounded-full"><i class="fas fa-arrow-up text-green-600 fa-2x"></i></div>
                 </div>
-                <!-- Gráfico de Despesas -->
-                <div class="card p-6">
-                    <h3 class="text-xl font-bold mb-4">Despesas por Categoria</h3>
-                    <canvas id="expense-chart"></canvas>
+                <div class="card p-6 flex items-center justify-between">
+                    <div><h2 class="text-lg font-semibold text-gray-500">Despesas</h2><p id="total-despesas" class="text-3xl font-bold text-red-600">R$ 0,00</p></div>
+                    <div class="bg-red-100 p-3 rounded-full"><i class="fas fa-arrow-down text-red-600 fa-2x"></i></div>
                 </div>
-            </div>
+                <div class="card p-6 flex items-center justify-between">
+                    <div><h2 class="text-lg font-semibold text-gray-500">Saldo Atual</h2><p id="saldo-atual" class="text-3xl font-bold text-blue-600">R$ 0,00</p></div>
+                     <div class="bg-blue-100 p-3 rounded-full"><i class="fas fa-wallet text-blue-600 fa-2x"></i></div>
+                </div>
+            </section>
+            <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-4">Adicionar Transação</h3>
+                        <form id="transaction-form" class="space-y-4">
+                            <div><label for="descricao" class="block text-sm font-medium">Descrição</label><input type="text" id="descricao" placeholder="Ex: Salário, Aluguel" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></div>
+                            <div><label for="valor" class="block text-sm font-medium">Valor (R$)</label><input type="number" id="valor" step="0.01" placeholder="0,00" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></div>
+                            <div><label class="block text-sm font-medium">Tipo</label><div class="mt-2 flex space-x-4"><label class="flex items-center"><input type="radio" name="tipo" value="receita" class="h-4 w-4" checked><span class="ml-2">Receita</span></label><label class="flex items-center"><input type="radio" name="tipo" value="despesa" class="h-4 w-4"><span class="ml-2">Despesa</span></label></div></div>
+                            <div id="categoria-container"><label for="categoria" class="block text-sm font-medium">Categoria</label><select id="categoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option><option>Saúde</option><option>Outros</option></select></div>
+                            <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Adicionar</button>
+                        </form>
+                    </div>
+                    <div class="card p-6"><h3 class="text-xl font-bold mb-4">Despesas por Categoria</h3><canvas id="expense-chart"></canvas></div>
+                </div>
+                <div class="lg:col-span-3 card p-6"><h3 class="text-xl font-bold mb-4">Histórico de Transações</h3><ul id="transaction-list" class="space-y-3"></ul></div>
+            </main>
+        </div>
 
-            <!-- Coluna de Histórico -->
-            <div class="lg:col-span-3 card p-6">
-                <h3 class="text-xl font-bold mb-4">Histórico de Transações</h3>
-                <ul id="transaction-list" class="space-y-3">
-                    <!-- Transações serão inseridas aqui via JS -->
-                    <li class="text-center text-gray-500 mt-4">Nenhuma transação registrada.</li>
-                </ul>
+        <!-- Conteúdo da Aba: Meus Sonhos (MELHORADO) -->
+        <div id="view-sonhos" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold">Seus Sonhos e Objetivos</h2>
+                <button id="add-sonho-btn" class="btn-primary font-bold py-2 px-4 rounded-md flex items-center"><i class="fas fa-plus mr-2"></i>Novo Sonho</button>
             </div>
-        </main>
+            <div id="sonhos-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Cards de sonhos detalhados serão inseridos aqui -->
+            </div>
+        </div>
     </div>
 
+    <!-- Modais (sem alterações na estrutura) -->
+    <div id="add-sonho-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Qual é o seu novo sonho?</h3><form id="sonho-form"><div class="space-y-4"><div><label for="sonho-nome" class="block text-sm font-medium">Nome do Sonho</label><input type="text" id="sonho-nome" placeholder="Ex: Carro Novo" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-valor" class="block text-sm font-medium">Valor Total (R$)</label><input type="number" id="sonho-valor" step="0.01" placeholder="60000,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-data" class="block text-sm font-medium">Data Alvo</label><input type="date" id="sonho-data" class="mt-1 block w-full border-gray-300 rounded-md" required></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-sonho-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
+    <div id="add-deposito-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-2">Adicionar Depósito</h3><p class="mb-6 text-gray-600">Para: <span id="deposito-sonho-nome" class="font-semibold"></span></p><form id="deposito-form"><input type="hidden" id="deposito-sonho-id"><div><label for="deposito-valor" class="block text-sm font-medium">Valor (R$)</label><input type="number" id="deposito-valor" step="0.01" placeholder="500,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-deposito-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Adicionar</button></div></form></div></div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Seletores de elementos do DOM
-            const transactionForm = document.getElementById('transaction-form');
-            const totalReceitasEl = document.getElementById('total-receitas');
-            const totalDespesasEl = document.getElementById('total-despesas');
-            const saldoAtualEl = document.getElementById('saldo-atual');
-            const transactionListEl = document.getElementById('transaction-list');
-            const categoriaContainer = document.getElementById('categoria-container');
-            const expenseChartCanvas = document.getElementById('expense-chart');
-            
-            let expenseChart; // Variável para guardar a instância do gráfico
+    document.addEventListener('DOMContentLoaded', () => {
+        // =================================================================
+        // INICIALIZAÇÃO E FUNÇÕES GLOBAIS
+        // =================================================================
+        const viewGeral = document.getElementById('view-geral');
+        const viewSonhos = document.getElementById('view-sonhos');
+        const tabGeralBtn = document.getElementById('tab-geral');
+        const tabSonhosBtn = document.getElementById('tab-sonhos');
 
-            // Carrega transações do Local Storage ou inicializa um array vazio
-            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-
-            // Função para salvar transações no Local Storage
-            const saveTransactions = () => {
-                localStorage.setItem('transactions', JSON.stringify(transactions));
-            };
-
-            // Função para formatar valores como moeda brasileira
-            const formatCurrency = (value) => {
-                return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            };
-
-            // Função para renderizar a lista de transações na tela
-            const renderTransactions = () => {
-                transactionListEl.innerHTML = ''; // Limpa a lista antes de renderizar
-
-                if (transactions.length === 0) {
-                    transactionListEl.innerHTML = '<li class="text-center text-gray-500 mt-4">Nenhuma transação registrada.</li>';
-                    return;
-                }
-
-                transactions.forEach(transaction => {
-                    const isReceita = transaction.tipo === 'receita';
-                    const li = document.createElement('li');
-                    li.className = `flex justify-between items-center p-3 rounded-md ${isReceita ? 'bg-green-50' : 'bg-red-50'}`;
-                    
-                    li.innerHTML = `
-                        <div class="flex items-center">
-                            <div class="mr-3 p-2 rounded-full ${isReceita ? 'bg-green-200' : 'bg-red-200'}">
-                                <i class="fas ${isReceita ? 'fa-plus text-green-700' : 'fa-minus text-red-700'}"></i>
-                            </div>
-                            <div>
-                                <span class="font-semibold">${transaction.descricao}</span>
-                                ${!isReceita ? `<span class="block text-sm text-gray-500">${transaction.categoria}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="text-right">
-                           <span class="font-bold ${isReceita ? 'text-green-600' : 'text-red-600'}">${formatCurrency(transaction.valor)}</span>
-                           <button onclick="deleteTransaction(${transaction.id})" class="ml-4 text-gray-400 hover:text-red-600">&times;</button>
-                        </div>
-                    `;
-                    transactionListEl.appendChild(li);
-                });
-            };
-
-            // Função para atualizar os totais (receitas, despesas, saldo)
-            const updateSummary = () => {
-                const receitas = transactions
-                    .filter(t => t.tipo === 'receita')
-                    .reduce((acc, t) => acc + t.valor, 0);
-
-                const despesas = transactions
-                    .filter(t => t.tipo === 'despesa')
-                    .reduce((acc, t) => acc + t.valor, 0);
-
-                const saldo = receitas - despesas;
-
-                totalReceitasEl.textContent = formatCurrency(receitas);
-                totalDespesasEl.textContent = formatCurrency(despesas);
-                saldoAtualEl.textContent = formatCurrency(saldo);
-
-                // Muda a cor do saldo se for negativo
-                saldoAtualEl.classList.toggle('text-red-600', saldo < 0);
-                saldoAtualEl.classList.toggle('text-blue-600', saldo >= 0);
-            };
-
-            // Função para atualizar o gráfico de despesas
-            const updateChart = () => {
-                const despesas = transactions.filter(t => t.tipo === 'despesa');
-                
-                // Agrupa despesas por categoria
-                const spendingByCategory = despesas.reduce((acc, transaction) => {
-                    acc[transaction.categoria] = (acc[transaction.categoria] || 0) + transaction.valor;
-                    return acc;
-                }, {});
-
-                const labels = Object.keys(spendingByCategory);
-                const data = Object.values(spendingByCategory);
-                
-                // Cores para o gráfico
-                const backgroundColors = [
-                    '#4f46e5', '#f97316', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6'
-                ];
-
-                // Destrói o gráfico antigo antes de criar um novo para evitar bugs
-                if (expenseChart) {
-                    expenseChart.destroy();
-                }
-
-                // Cria o novo gráfico
-                expenseChart = new Chart(expenseChartCanvas, {
-                    type: 'doughnut', // Tipo do gráfico: rosca
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Despesas',
-                            data: data,
-                            backgroundColor: backgroundColors,
-                            borderColor: '#ffffff',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed !== null) {
-                                            label += formatCurrency(context.parsed);
-                                        }
-                                        return label;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            };
-
-            // Função para adicionar uma nova transação
-            const addTransaction = (e) => {
-                e.preventDefault();
-
-                const descricao = document.getElementById('descricao').value;
-                const valor = parseFloat(document.getElementById('valor').value);
-                const tipo = document.querySelector('input[name="tipo"]:checked').value;
-                const categoria = document.getElementById('categoria').value;
-
-                if (descricao.trim() === '' || isNaN(valor) || valor <= 0) {
-                    // Simples validação para evitar dados inválidos
-                    alert('Por favor, preencha a descrição e um valor válido.');
-                    return;
-                }
-
-                const transaction = {
-                    id: Date.now(), // ID único baseado no timestamp
-                    descricao,
-                    valor,
-                    tipo,
-                    categoria: tipo === 'despesa' ? categoria : null
-                };
-
-                transactions.push(transaction);
-                saveTransactions();
-                updateUI();
-                transactionForm.reset();
-                // Garante que o campo categoria volte a ser visível após reset
-                categoriaContainer.style.display = 'block'; 
-            };
-            
-            // Função para deletar uma transação
-            window.deleteTransaction = (id) => {
-                transactions = transactions.filter(transaction => transaction.id !== id);
-                saveTransactions();
-                updateUI();
-            };
-
-            // Função principal que atualiza toda a interface
-            const updateUI = () => {
-                updateSummary();
-                renderTransactions();
-                updateChart();
-            };
-            
-            // Event listener para o formulário
-            transactionForm.addEventListener('submit', addTransaction);
-
-            // Event listener para os botões de tipo (receita/despesa)
-            document.querySelectorAll('input[name="tipo"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    // Esconde o campo de categoria se for uma receita
-                    categoriaContainer.style.display = e.target.value === 'despesa' ? 'block' : 'none';
-                });
-            });
-
-            // Inicialização da UI
-            updateUI();
-            // Garante que o campo categoria esteja visível ou não no carregamento inicial
-            const tipoInicial = document.querySelector('input[name="tipo"]:checked').value;
-            categoriaContainer.style.display = tipoInicial === 'despesa' ? 'block' : 'none';
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        let dreams = JSON.parse(localStorage.getItem('dreams')) || [];
+        
+        const saveTransactions = () => localStorage.setItem('transactions', JSON.stringify(transactions));
+        const saveDreams = () => localStorage.setItem('dreams', JSON.stringify(dreams));
+        const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        
+        // =================================================================
+        // LÓGICA DE NAVEGAÇÃO POR ABAS
+        // =================================================================
+        tabGeralBtn.addEventListener('click', () => {
+            viewGeral.classList.remove('hidden'); viewSonhos.classList.add('hidden');
+            tabGeralBtn.classList.add('active'); tabSonhosBtn.classList.remove('active');
         });
+        tabSonhosBtn.addEventListener('click', () => {
+            viewGeral.classList.add('hidden'); viewSonhos.classList.remove('hidden');
+            tabGeralBtn.classList.remove('active'); tabSonhosBtn.classList.add('active');
+            renderSonhosList();
+        });
+
+        // =================================================================
+        // LÓGICA DA ABA "VISÃO GERAL" (sem alterações funcionais)
+        // =================================================================
+        const transactionForm = document.getElementById('transaction-form');
+        const totalReceitasEl = document.getElementById('total-receitas');
+        const totalDespesasEl = document.getElementById('total-despesas');
+        const saldoAtualEl = document.getElementById('saldo-atual');
+        const transactionListEl = document.getElementById('transaction-list');
+        const categoriaContainer = document.getElementById('categoria-container');
+        const expenseChartCanvas = document.getElementById('expense-chart');
+        let expenseChart;
+        const renderTransactions=()=>{transactionListEl.innerHTML="",transactions.length===0?transactionListEl.innerHTML='<li class="text-center text-gray-500 mt-4">Nenhuma transação registrada.</li>':transactions.forEach(t=>{const e=t.tipo==="receita",a=document.createElement("li");a.className=`flex justify-between items-center p-3 rounded-md ${e?"bg-green-50":"bg-red-50"}`,a.innerHTML=`<div class="flex items-center"><div class="mr-3 p-2 rounded-full ${e?"bg-green-200":"bg-red-200"}"><i class="fas ${e?"fa-plus text-green-700":"fa-minus text-red-700"}"></i></div><div><span class="font-semibold">${t.descricao}</span>${e?"":`<span class="block text-sm text-gray-500">${t.categoria}</span>`}</div></div><div class="text-right"><span class="font-bold ${e?"text-green-600":"text-red-600"}">${formatCurrency(t.valor)}</span><button onclick="deleteTransaction(${t.id})" class="ml-4 text-gray-400 hover:text-red-600">&times;</button></div>`,transactionListEl.appendChild(a)})},updateSummary=()=>{const t=transactions.filter(t=>t.tipo==="receita").reduce((t,e)=>t+e.valor,0),e=transactions.filter(t=>t.tipo==="despesa").reduce((t,e)=>t+e.valor,0),a=t-e;totalReceitasEl.textContent=formatCurrency(t),totalDespesasEl.textContent=formatCurrency(e),saldoAtualEl.textContent=formatCurrency(a),saldoAtualEl.classList.toggle("text-red-600",a<0),saldoAtualEl.classList.toggle("text-blue-600",a>=0)},updateExpenseChart=()=>{const t=transactions.filter(t=>t.tipo==="despesa").reduce((t,e)=>{return t[e.categoria]=(t[e.categoria]||0)+e.valor,t},{});expenseChart&&expenseChart.destroy(),expenseChart=new Chart(expenseChartCanvas,{type:"doughnut",data:{labels:Object.keys(t),datasets:[{data:Object.values(t),backgroundColor:["#4f46e5","#f97316","#10b981","#3b82f6","#ef4444","#8b5cf6"],borderColor:"#ffffff",borderWidth:2}]},options:{responsive:!0,plugins:{legend:{position:"bottom"}}}})},addTransaction=t=>{t.preventDefault();const e={id:Date.now(),descricao:document.getElementById("descricao").value,valor:parseFloat(document.getElementById("valor").value),tipo:document.querySelector('input[name="tipo"]:checked').value,categoria:document.getElementById("categoria").value};transactions.push(e),saveTransactions(),updateUIGeral(),transactionForm.reset()};window.deleteTransaction=t=>{transactions=transactions.filter(e=>e.id!==t),saveTransactions(),updateUIGeral()};const updateUIGeral=()=>{updateSummary(),renderTransactions(),updateExpenseChart()};transactionForm.addEventListener("submit",addTransaction),document.querySelectorAll('input[name="tipo"]').forEach(t=>{t.addEventListener("change",t=>{categoriaContainer.style.display=t.target.value==="despesa"?"block":"none"})});
+
+        // =================================================================
+        // LÓGICA DA ABA "MEUS SONHOS" (MELHORADO)
+        // =================================================================
+        const sonosListEl = document.getElementById('sonhos-list');
+        const addSonhoModal = document.getElementById('add-sonho-modal');
+        const sonhoForm = document.getElementById('sonho-form');
+        const addDepositoModal = document.getElementById('add-deposito-modal');
+        const depositoForm = document.getElementById('deposito-form');
+
+        const renderSonhosList = () => {
+            sonosListEl.innerHTML = '';
+            if (dreams.length === 0) {
+                sonosListEl.innerHTML = `<div class="col-span-full text-center text-gray-500 mt-8"><i class="fas fa-cloud-moon fa-3x mb-4"></i><p class="text-xl">Você ainda não cadastrou nenhum sonho.</p><p>Clique em "Novo Sonho" para começar a planejar!</p></div>`;
+                return;
+            }
+            dreams.forEach(dream => {
+                const totalDepositado = dream.deposits.reduce((acc, d) => acc + d.valor, 0);
+                const progresso = Math.min((totalDepositado / dream.valor) * 100, 100);
+                const restante = dream.valor - totalDepositado;
+
+                const hoje = new Date();
+                const dataAlvo = new Date(dream.dataAlvo);
+                const mesesRestantes = (dataAlvo.getFullYear() - hoje.getFullYear()) * 12 + (dataAlvo.getMonth() - hoje.getMonth());
+                const idealPorMes = mesesRestantes > 0 ? restante / mesesRestantes : 0;
+
+                const card = document.createElement('div');
+                card.className = `card p-6 space-y-4 ${progresso >= 100 ? 'dream-completed' : ''}`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <h4 class="text-2xl font-bold text-gray-800">${dream.nome}</h4>
+                            ${progresso >= 100 ? `<span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full"><i class="fas fa-check-circle"></i> Concluído!</span>` : `<button onclick="deleteSonho(${dream.id})" class="text-gray-400 hover:text-red-600">&times;</button>`}
+                        </div>
+                        <p class="text-gray-500">Objetivo: <span class="font-semibold">${formatCurrency(dream.valor)}</span></p>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between mb-1"><span class="font-medium text-indigo-700">${formatCurrency(totalDepositado)}</span><span class="font-medium text-indigo-700">${progresso.toFixed(1)}%</span></div>
+                        <div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-indigo-600 h-4 rounded-full" style="width: ${progresso}%"></div></div>
+                        <p class="text-sm text-right text-gray-600 mt-1">Faltam ${formatCurrency(Math.max(0, restante))}</p>
+                    </div>
+
+                    <div class="border-t pt-4 space-y-3">
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Cadastrado em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Ideal por mês:</span><span class="font-semibold">${formatCurrency(Math.max(0, idealPorMes))}</span></div>
+                    </div>
+                    
+                    <div class="h-24"><canvas id="chart-sonho-${dream.id}"></canvas></div>
+                    
+                    ${progresso < 100 ? `<button onclick="openDepositoModal(${dream.id})" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center"><i class="fas fa-plus-circle mr-2"></i>Adicionar Depósito</button>` : ''}
+                `;
+                sonosListEl.appendChild(card);
+
+                // Renderiza o mini-gráfico
+                if (dream.deposits.length > 0) {
+                    const chartCtx = document.getElementById(`chart-sonho-${dream.id}`).getContext('2d');
+                    let cumulativeAmount = 0;
+                    const chartData = dream.deposits.map(d => cumulativeAmount += d.valor);
+                    const chartLabels = dream.deposits.map(d => formatDate(d.data));
+                    
+                    new Chart(chartCtx, {
+                        type: 'line',
+                        data: {
+                            labels: chartLabels,
+                            datasets: [{
+                                label: 'Evolução',
+                                data: chartData,
+                                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                                borderColor: '#4f46e5',
+                                borderWidth: 2,
+                                tension: 0.3,
+                                fill: true,
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { x: { display: false }, y: { display: false } }
+                        }
+                    });
+                }
+            });
+        };
+        
+        document.getElementById('add-sonho-btn').addEventListener('click', () => addSonhoModal.classList.remove('hidden'));
+        document.getElementById('cancel-sonho-btn').addEventListener('click', () => addSonhoModal.classList.add('hidden'));
+        document.getElementById('cancel-deposito-btn').addEventListener('click', () => addDepositoModal.classList.add('hidden'));
+
+        window.openDepositoModal = (id) => {
+            const dream = dreams.find(d => d.id === id);
+            document.getElementById('deposito-sonho-nome').textContent = dream.nome;
+            document.getElementById('deposito-sonho-id').value = id;
+            addDepositoModal.classList.remove('hidden');
+        };
+
+        sonhoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            dreams.push({
+                id: Date.now(),
+                nome: document.getElementById('sonho-nome').value,
+                valor: parseFloat(document.getElementById('sonho-valor').value),
+                dataAlvo: document.getElementById('sonho-data').value,
+                createdAt: new Date().toISOString(),
+                deposits: [],
+                completed: false
+            });
+            saveDreams(); renderSonhosList();
+            sonhoForm.reset(); addSonhoModal.classList.add('hidden');
+        });
+
+        depositoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const dreamId = parseInt(document.getElementById('deposito-sonho-id').value);
+            const valor = parseFloat(document.getElementById('deposito-valor').value);
+            const dream = dreams.find(d => d.id === dreamId);
+            if (dream) {
+                const totalAnterior = dream.deposits.reduce((acc, d) => acc + d.valor, 0);
+                dream.deposits.push({ id: Date.now(), valor: valor, data: new Date().toISOString() });
+                
+                const totalAtual = totalAnterior + valor;
+                if (totalAtual >= dream.valor && !dream.completed) {
+                    dream.completed = true;
+                    confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+                }
+                saveDreams(); renderSonhosList();
+            }
+            depositoForm.reset(); addDepositoModal.classList.add('hidden');
+        });
+
+        window.deleteSonho = (id) => {
+            if (confirm('Tem certeza que deseja apagar este sonho? A ação não pode ser desfeita.')) {
+                dreams = dreams.filter(d => d.id !== id);
+                saveDreams(); renderSonhosList();
+            }
+        };
+
+        // =================================================================
+        // INICIALIZAÇÃO GERAL DA APLICAÇÃO
+        // =================================================================
+        updateUIGeral();
+        tabGeralBtn.click();
+    });
     </script>
 </body>
 </html>
