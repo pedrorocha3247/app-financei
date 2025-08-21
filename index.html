@@ -163,25 +163,37 @@
                 </div>
             </section>
             
-            <!-- Seção de Previsão de Gastos -->
-            <section id="forecast-section" class="card p-6 mb-8">
-                <div data-toggle="forecast-content" class="flex justify-between items-center cursor-pointer">
-                    <h3 class="text-xl font-bold">Previsão de Gastos do Mês</h3>
-                    <i class="fas fa-chevron-down toggle-icon collapsed"></i>
-                </div>
-                <div id="forecast-content" class="collapsible-content collapsed pt-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <div class="flex items-center justify-between">
-                                <p id="fixed-expenses-label" class="text-sm text-gray-500">Despesas Fixas</p>
-                                <button id="manage-fixed-btn" class="text-xs text-indigo-600 font-semibold hover:underline">Gerenciar</button>
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Seção de Previsão de Gastos -->
+                <div id="forecast-section" class="card p-6">
+                    <div data-toggle="forecast-content" class="flex justify-between items-center cursor-pointer">
+                        <h3 class="text-xl font-bold">Previsão de Gastos do Mês</h3>
+                        <i class="fas fa-chevron-down toggle-icon collapsed"></i>
+                    </div>
+                    <div id="forecast-content" class="collapsible-content collapsed pt-4">
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex items-center justify-between">
+                                    <p id="fixed-expenses-label" class="text-sm text-gray-500">Despesas Fixas</p>
+                                    <button id="manage-fixed-expenses-btn" class="text-xs text-indigo-600 font-semibold hover:underline">Gerenciar</button>
+                                </div>
+                                <p id="fixed-expenses-total" class="text-2xl font-bold text-orange-600">R$ 0,00</p>
                             </div>
-                            <p id="fixed-expenses-total" class="text-2xl font-bold text-orange-600">R$ 0,00</p>
+                            <div>
+                                <p class="text-sm text-gray-500">Despesas Variáveis (Realizadas)</p>
+                                <p id="variable-expenses-total" class="text-2xl font-bold text-yellow-600">R$ 0,00</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Despesas Variáveis (Realizadas)</p>
-                            <p id="variable-expenses-total" class="text-2xl font-bold text-yellow-600">R$ 0,00</p>
-                        </div>
+                    </div>
+                </div>
+                 <!-- Seção de Recebimentos Agendados -->
+                <div id="scheduled-section" class="card p-6">
+                    <div data-toggle="scheduled-content" class="flex justify-between items-center cursor-pointer">
+                        <h3 class="text-xl font-bold">Recebimentos Agendados</h3>
+                        <i class="fas fa-chevron-down toggle-icon collapsed"></i>
+                    </div>
+                    <div id="scheduled-content" class="collapsible-content collapsed pt-4">
+                        <ul id="scheduled-transactions-list" class="space-y-3"></ul>
                     </div>
                 </div>
             </section>
@@ -294,7 +306,7 @@
     </div>
 
     <!-- Modais -->
-    <div id="fixed-transactions-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-2/3 max-w-3xl"><div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold">Gerenciar Transações Fixas</h3><button id="close-fixed-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button></div><div id="fixed-transactions-list" class="space-y-4 max-h-96 overflow-y-auto"></div></div></div>
+    <div id="fixed-transactions-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-2/3 max-w-3xl"><div class="flex justify-between items-center mb-6"><h3 id="fixed-modal-title" class="text-2xl font-bold">Gerenciar Transações Fixas</h3><button id="close-fixed-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button></div><div id="fixed-transactions-list" class="space-y-4 max-h-96 overflow-y-auto"></div></div></div>
     <div id="edit-transaction-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Editar Transação</h3><form id="edit-transaction-form" class="space-y-4"><input type="hidden" id="edit-transaction-id"><div><label for="edit-descricao" class="block text-sm font-medium">Descrição</label><input type="text" id="edit-descricao" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="edit-valor" class="block text-sm font-medium">Valor (R$)</label><input type="text" id="edit-valor" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label class="block text-sm font-medium">Tipo</label><div id="edit-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="receita"><i class="fas fa-plus-circle mr-2"></i>Receita</div><div class="segmented-control-option" data-value="despesa"><i class="fas fa-minus-circle mr-2"></i>Despesa</div></div></div><div id="edit-receita-details-container" class="hidden space-y-4"><div><label class="block text-sm font-medium">Tipo de Receita</label><div id="edit-receita-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="variavel">Variável</div><div class="segmented-control-option" data-value="fixa">Fixa</div></div></div><div id="edit-receita-date-container" class="hidden"><label for="edit-receita-dia" class="block text-sm font-medium">Dia do Mês</label><input type="number" id="edit-receita-dia" min="1" max="31" class="mt-1 block w-full border-gray-300 rounded-md"></div></div><div id="edit-expense-details-container" class="hidden space-y-4"><div><label class="block text-sm font-medium">Categoria</label><select id="edit-categoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option><option>Saúde</option><option>Outros</option></select></div><div><label class="block text-sm font-medium">Tipo de Gasto</label><div id="edit-gasto-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="variavel">Variável</div><div class="segmented-control-option" data-value="fixa">Fixa</div></div></div><div id="edit-despesa-date-container" class="hidden"><label for="edit-despesa-dia" class="block text-sm font-medium">Dia do Mês</label><input type="number" id="edit-despesa-dia" min="1" max="31" class="mt-1 block w-full border-gray-300 rounded-md"></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-edit-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
     <div id="add-sonho-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Qual é o seu novo sonho?</h3><form id="sonho-form"><div class="space-y-4"><div><label for="sonho-nome" class="block text-sm font-medium">Nome do Sonho</label><input type="text" id="sonho-nome" placeholder="Ex: Carro Novo" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-valor" class="block text-sm font-medium">Valor Total (R$)</label><input type="text" id="sonho-valor" placeholder="0,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-data" class="block text-sm font-medium">Data Alvo</label><input type="date" id="sonho-data" class="mt-1 block w-full border-gray-300 rounded-md" required></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-sonho-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
     <div id="edit-sonho-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Editar Sonho</h3><form id="edit-sonho-form"><input type="hidden" id="edit-sonho-id"><div class="space-y-4"><div><label for="edit-sonho-nome" class="block text-sm font-medium">Nome do Sonho</label><input type="text" id="edit-sonho-nome" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="edit-sonho-valor" class="block text-sm font-medium">Valor Total (R$)</label><input type="text" id="edit-sonho-valor" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="edit-sonho-data" class="block text-sm font-medium">Data Alvo</label><input type="date" id="edit-sonho-data" class="mt-1 block w-full border-gray-300 rounded-md" required></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-edit-sonho-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
@@ -335,6 +347,7 @@
             fixedExpensesTotalEl: document.getElementById('fixed-expenses-total'),
             fixedExpensesLabel: document.getElementById('fixed-expenses-label'),
             variableExpensesTotalEl: document.getElementById('variable-expenses-total'),
+            scheduledTransactionsList: document.getElementById('scheduled-transactions-list'),
             transactionListEl: document.getElementById('transaction-list'),
             receitaDetailsContainer: document.getElementById('receita-details-container'),
             expenseDetailsContainer: document.getElementById('expense-details-container'),
@@ -350,10 +363,11 @@
             chartLegend: document.getElementById('chart-legend'),
             expenseChartCanvas: document.getElementById('expense-chart').getContext('2d'),
             // Manage Fixed Modal
-            manageFixedBtn: document.getElementById('manage-fixed-btn'),
+            manageFixedBtn: document.getElementById('manage-fixed-expenses-btn'),
             fixedTransactionsModal: document.getElementById('fixed-transactions-modal'),
             fixedTransactionsList: document.getElementById('fixed-transactions-list'),
             closeFixedModalBtn: document.getElementById('close-fixed-modal-btn'),
+            fixedModalTitle: document.getElementById('fixed-modal-title'),
             // Edit Transaction Modal
             editTransactionModal: document.getElementById('edit-transaction-modal'),
             editTransactionForm: document.getElementById('edit-transaction-form'),
@@ -434,6 +448,7 @@
                 updateSummary(monthlyTransactions, previousBalance, fixedForecast, isFirstMonthEver);
                 renderTransactions(monthlyTransactions);
                 updateExpenseChart(monthlyTransactions);
+                renderScheduledTransactions();
             };
 
             if (isMonthChange) {
@@ -448,36 +463,28 @@
         const carryOverFixedTransactions = () => {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-            
-            const hasRevenueThisMonth = transactions.some(t => {
-                const tDate = new Date(t.date);
-                return tDate.getFullYear() === year && tDate.getMonth() === month && t.tipo === 'receita';
-            });
+            const today = new Date();
 
-            if (!hasRevenueThisMonth) return;
+            const fixedTransactionsToCarry = transactions.filter(t => t.receitaTipo === 'fixa' || t.gastoTipo === 'fixa');
+            const uniqueFixed = [...new Map(fixedTransactionsToCarry.map(item => [item['descricao'], item])).values()];
 
-            const forecastKey = `forecast_carried_over_${year}-${month}`;
-            if (localStorage.getItem(forecastKey)) return;
-
-            const prevMonthDate = new Date(year, month, 0);
-            const prevMonth = prevMonthDate.getMonth();
-            const prevYear = prevMonthDate.getFullYear();
-
-            const fixedTransactionsFromLastMonth = transactions.filter(t => {
-                const tDate = new Date(t.date);
-                return tDate.getFullYear() === prevYear && tDate.getMonth() === prevMonth && (t.gastoTipo === 'fixa' || t.receitaTipo === 'fixa');
-            });
-
-            fixedTransactionsFromLastMonth.forEach(t => {
+            uniqueFixed.forEach(t => {
                 const day = new Date(t.date).getDate();
-                const newTransaction = { ...t, id: Date.now() + Math.random(), date: new Date(year, month, day).toISOString() };
-                transactions.push(newTransaction);
-            });
+                const transactionDate = new Date(year, month, day);
 
-            if (fixedTransactionsFromLastMonth.length > 0) {
-                saveTransactions();
-            }
-            localStorage.setItem(forecastKey, 'true');
+                if (transactionDate <= today) {
+                    const alreadyExists = transactions.some(trans => {
+                        const transDate = new Date(trans.date);
+                        return trans.descricao === t.descricao && transDate.getFullYear() === year && transDate.getMonth() === month;
+                    });
+
+                    if (!alreadyExists) {
+                        const newTransaction = { ...t, id: Date.now() + Math.random(), date: transactionDate.toISOString() };
+                        transactions.push(newTransaction);
+                        saveTransactions();
+                    }
+                }
+            });
         };
         
         const calculateFixedForecast = (year, month) => {
@@ -598,9 +605,46 @@
             expenseChart = new Chart(elements.expenseChartCanvas, { type: "doughnut", data: { labels: chartLabels, datasets: [{ data: chartValues, backgroundColor: backgroundColors, borderColor: "#ffffff", borderWidth: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         };
         
+        const renderScheduledTransactions = () => {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const today = new Date().getDate();
+
+            const uniqueFixed = [...new Map(transactions.filter(t => t.receitaTipo === 'fixa' || t.gastoTipo === 'fixa').map(item => [item['descricao'], item])).values()];
+            
+            const scheduledList = uniqueFixed.filter(t => {
+                const day = new Date(t.date).getDate();
+                const alreadyExists = transactions.some(trans => {
+                    const transDate = new Date(trans.date);
+                    return trans.descricao === t.descricao && transDate.getFullYear() === year && transDate.getMonth() === month;
+                });
+                return !alreadyExists && day > today;
+            });
+
+            elements.scheduledTransactionsList.innerHTML = '';
+            if (scheduledList.length === 0) {
+                elements.scheduledTransactionsList.innerHTML = '<li class="text-center text-gray-500">Nenhum agendamento futuro para este mês.</li>';
+                return;
+            }
+
+            scheduledList.forEach(t => {
+                const day = new Date(t.date).getDate();
+                const isReceita = t.tipo === 'receita';
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center text-sm';
+                li.innerHTML = `
+                    <span class="flex items-center"><i class="fas ${isReceita ? 'fa-arrow-up text-green-500' : 'fa-arrow-down text-red-500'} mr-2"></i> ${t.descricao}</span>
+                    <span class="font-semibold">${formatCurrency(t.valor)} - Dia ${day}</span>
+                `;
+                elements.scheduledTransactionsList.appendChild(li);
+            });
+        };
+
         const handleAddTransaction = (event) => {
             event.preventDefault();
-            const tipo = elements.typeSelector.querySelector('.active').dataset.value;
+            const tipo = elements.typeSelector.querySelector('.active')?.dataset.value;
+            if (!tipo) return;
+
             const valor = parseCurrency(elements.valorInput.value);
             const receitaTipo = tipo === 'receita' ? elements.receitaTypeSelector.querySelector('.active').dataset.value : null;
             const gastoTipo = tipo === 'despesa' ? elements.gastoTypeSelector.querySelector('.active').dataset.value : null;
@@ -624,7 +668,10 @@
                 gastoTipo: gastoTipo,
                 receitaTipo: receitaTipo
             };
-            if (!transaction.descricao || isNaN(transaction.valor) || transaction.valor <= 0) return;
+            if (!transaction.descricao || isNaN(transaction.valor) || transaction.valor <= 0 || ( (receitaTipo === 'fixa' || gastoTipo === 'fixa') && (!day || day < 1 || day > 31) )) {
+                alert('Por favor, preencha todos os campos corretamente.');
+                return;
+            }
             transactions.push(transaction);
             saveTransactions();
             updateUIGeral();
@@ -886,8 +933,8 @@
             if (window.sonhosScriptLoaded) return;
             window.sonhosScriptLoaded = true;
 
-            let dreams = JSON.parse(localStorage.getItem('finance_dreams_v15')) || [];
-            const saveDreams = () => localStorage.setItem('finance_dreams_v15', JSON.stringify(dreams));
+            let dreams = JSON.parse(localStorage.getItem('finance_dreams_v16')) || [];
+            const saveDreams = () => localStorage.setItem('finance_dreams_v16', JSON.stringify(dreams));
             const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
             const parseCurrency = (value) => {
