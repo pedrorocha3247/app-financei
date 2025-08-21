@@ -984,7 +984,7 @@
                 let depositsHTML = dream.deposits.map(d => `<li class="flex justify-between text-sm"><span class="text-gray-600">${formatDate(d.data)}</span><span class="font-medium text-green-700">+ ${formatCurrency(d.valor)}</span></li>`).join('');
                 const card = document.createElement('div');
                 card.className = 'card dream-completed-card p-6 animate-fade-in';
-                card.innerHTML = `<div class="flex justify-between items-center mb-3"><h4 class="text-2xl font-bold text-green-800">${dream.nome}</h4><span class="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full"><i class="fas fa-check-circle mr-1"></i>Concluído!</span></div><div class="space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Valor Total:</span><span class="font-semibold">${formatCurrency(dream.valor)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Início em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Data de Conclusão:</span><span class="font-semibold">${formatDate(dream.deposits[dream.deposits.length - 1].data)}</span></div><div class="border-t pt-3"><p class="font-semibold mb-2">Histórico de Depósitos:</p><ul class="space-y-1 max-h-32 overflow-y-auto pr-2">${depositsHTML}</ul></div></div>`;
+                card.innerHTML = `<div class="flex justify-between items-center mb-3"><h4 class="text-2xl font-bold text-green-800">${dream.nome}</h4><div class="flex items-center"><button onclick="window.openEditSonhoModal(${dream.id})" class="text-gray-400 hover:text-blue-600 transition-colors mr-3"><i class="fas fa-pen"></i></button><button onclick="window.deleteSonho(${dream.id})" class="text-gray-400 hover:text-red-600 transition-colors">&times;</button></div></div><div class="space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Valor Total:</span><span class="font-semibold">${formatCurrency(dream.valor)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Início em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Data de Conclusão:</span><span class="font-semibold">${formatDate(dream.deposits[dream.deposits.length - 1].data)}</span></div><div class="border-t pt-3"><p class="font-semibold mb-2">Histórico de Depósitos:</p><ul class="space-y-1 max-h-32 overflow-y-auto pr-2">${depositsHTML}</ul></div></div>`;
                 elements.sonosRealizadosListEl.appendChild(card);
             };
             window.openDepositoModal = (id) => { const dream = dreams.find(d => d.id === id); document.getElementById('deposito-sonho-nome').textContent = dream.nome; document.getElementById('deposito-sonho-id').value = id; elements.addDepositoModal.classList.remove('hidden'); };
@@ -1003,12 +1003,19 @@
                 const id = parseInt(document.getElementById('edit-sonho-id').value);
                 const dreamIndex = dreams.findIndex(d => d.id === id);
                 if (dreamIndex === -1) return;
-                dreams[dreamIndex] = {
+                
+                const updatedDream = {
                     ...dreams[dreamIndex],
                     nome: document.getElementById('edit-sonho-nome').value,
                     valor: parseCurrency(document.getElementById('edit-sonho-valor').value),
                     dataAlvo: document.getElementById('edit-sonho-data').value,
                 };
+
+                const totalDepositado = updatedDream.deposits.reduce((acc, d) => acc + d.valor, 0);
+                updatedDream.completed = totalDepositado >= updatedDream.valor;
+
+                dreams[dreamIndex] = updatedDream;
+                
                 saveDreams();
                 renderSonhosList();
                 elements.editSonhoModal.classList.add('hidden');
