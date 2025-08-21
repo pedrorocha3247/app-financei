@@ -34,6 +34,11 @@
             background-color: #4338ca;
             box-shadow: 0 6px 20px 0 rgb(79 70 229 / 45%);
         }
+        .btn-primary:disabled {
+            background-color: #a5b4fc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
         .tab-btn {
             padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600;
             cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent;
@@ -44,6 +49,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.5); display: flex;
             justify-content: center; align-items: center; z-index: 50;
+            transition: opacity 0.3s ease;
         }
         .dream-completed-card {
             border-left: 4px solid #22c55e;
@@ -164,9 +170,12 @@
                     <i class="fas fa-chevron-down toggle-icon collapsed"></i>
                 </div>
                 <div id="forecast-content" class="collapsible-content collapsed pt-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <p id="fixed-expenses-label" class="text-sm text-gray-500">Despesas Fixas</p>
+                            <div class="flex items-center justify-between">
+                                <p id="fixed-expenses-label" class="text-sm text-gray-500">Despesas Fixas</p>
+                                <button id="manage-fixed-btn" class="text-xs text-indigo-600 font-semibold hover:underline">Gerenciar</button>
+                            </div>
                             <p id="fixed-expenses-total" class="text-2xl font-bold text-orange-600">R$ 0,00</p>
                         </div>
                         <div>
@@ -197,8 +206,21 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Tipo</label>
                                 <div id="type-selector" class="segmented-control mt-1">
-                                    <div class="segmented-control-option active" data-value="receita"><i class="fas fa-plus-circle mr-2"></i>Receita</div>
+                                    <div class="segmented-control-option" data-value="receita"><i class="fas fa-plus-circle mr-2"></i>Receita</div>
                                     <div class="segmented-control-option" data-value="despesa"><i class="fas fa-minus-circle mr-2"></i>Despesa</div>
+                                </div>
+                            </div>
+                            <div id="receita-details-container" class="hidden space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Tipo de Receita</label>
+                                    <div id="receita-type-selector" class="segmented-control mt-1">
+                                        <div class="segmented-control-option active" data-value="variavel">Variável</div>
+                                        <div class="segmented-control-option" data-value="fixa">Fixa</div>
+                                    </div>
+                                </div>
+                                <div id="receita-date-container" class="hidden">
+                                    <label for="receita-dia" class="block text-sm font-medium text-gray-700">Dia do Mês</label>
+                                    <input type="number" id="receita-dia" min="1" max="31" placeholder="Ex: 5" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                                 </div>
                             </div>
                             <div id="expense-details-container" class="hidden space-y-4">
@@ -213,8 +235,12 @@
                                         <div class="segmented-control-option" data-value="fixa">Fixa</div>
                                     </div>
                                 </div>
+                                <div id="despesa-date-container" class="hidden">
+                                    <label for="despesa-dia" class="block text-sm font-medium text-gray-700">Dia do Mês</label>
+                                    <input type="number" id="despesa-dia" min="1" max="31" placeholder="Ex: 10" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                </div>
                             </div>
-                            <button type="submit" class="w-full btn-primary font-bold py-2.5 px-4 rounded-md">Adicionar</button>
+                            <button type="submit" id="add-transaction-btn" class="w-full btn-primary font-bold py-2.5 px-4 rounded-md" disabled>Adicionar</button>
                         </form>
                     </div>
                     <div class="card p-6">
@@ -268,19 +294,21 @@
     </div>
 
     <!-- Modais -->
-    <div id="edit-transaction-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Editar Transação</h3><form id="edit-transaction-form" class="space-y-4"><input type="hidden" id="edit-transaction-id"><div><label for="edit-descricao" class="block text-sm font-medium">Descrição</label><input type="text" id="edit-descricao" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="edit-valor" class="block text-sm font-medium">Valor (R$)</label><input type="text" id="edit-valor" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label class="block text-sm font-medium">Tipo</label><div id="edit-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="receita"><i class="fas fa-plus-circle mr-2"></i>Receita</div><div class="segmented-control-option" data-value="despesa"><i class="fas fa-minus-circle mr-2"></i>Despesa</div></div></div><div id="edit-expense-details-container" class="hidden space-y-4"><div><label class="block text-sm font-medium">Categoria</label><select id="edit-categoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option><option>Saúde</option><option>Outros</option></select></div><div><label class="block text-sm font-medium">Tipo de Gasto</label><div id="edit-gasto-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="variavel">Variável</div><div class="segmented-control-option" data-value="fixa">Fixa</div></div></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-edit-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
+    <div id="fixed-transactions-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-2/3 max-w-3xl"><div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold">Gerenciar Transações Fixas</h3><button id="close-fixed-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button></div><div id="fixed-transactions-list" class="space-y-4 max-h-96 overflow-y-auto"></div></div></div>
+    <div id="edit-transaction-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Editar Transação</h3><form id="edit-transaction-form" class="space-y-4"><input type="hidden" id="edit-transaction-id"><div><label for="edit-descricao" class="block text-sm font-medium">Descrição</label><input type="text" id="edit-descricao" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="edit-valor" class="block text-sm font-medium">Valor (R$)</label><input type="text" id="edit-valor" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label class="block text-sm font-medium">Tipo</label><div id="edit-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="receita"><i class="fas fa-plus-circle mr-2"></i>Receita</div><div class="segmented-control-option" data-value="despesa"><i class="fas fa-minus-circle mr-2"></i>Despesa</div></div></div><div id="edit-receita-details-container" class="hidden space-y-4"><div><label class="block text-sm font-medium">Tipo de Receita</label><div id="edit-receita-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="variavel">Variável</div><div class="segmented-control-option" data-value="fixa">Fixa</div></div></div><div id="edit-receita-date-container" class="hidden"><label for="edit-receita-dia" class="block text-sm font-medium">Dia do Mês</label><input type="number" id="edit-receita-dia" min="1" max="31" class="mt-1 block w-full border-gray-300 rounded-md"></div></div><div id="edit-expense-details-container" class="hidden space-y-4"><div><label class="block text-sm font-medium">Categoria</label><select id="edit-categoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option><option>Saúde</option><option>Outros</option></select></div><div><label class="block text-sm font-medium">Tipo de Gasto</label><div id="edit-gasto-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="variavel">Variável</div><div class="segmented-control-option" data-value="fixa">Fixa</div></div></div><div id="edit-despesa-date-container" class="hidden"><label for="edit-despesa-dia" class="block text-sm font-medium">Dia do Mês</label><input type="number" id="edit-despesa-dia" min="1" max="31" class="mt-1 block w-full border-gray-300 rounded-md"></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-edit-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
     <div id="add-sonho-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Qual é o seu novo sonho?</h3><form id="sonho-form"><div class="space-y-4"><div><label for="sonho-nome" class="block text-sm font-medium">Nome do Sonho</label><input type="text" id="sonho-nome" placeholder="Ex: Carro Novo" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-valor" class="block text-sm font-medium">Valor Total (R$)</label><input type="text" id="sonho-valor" placeholder="0,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-data" class="block text-sm font-medium">Data Alvo</label><input type="date" id="sonho-data" class="mt-1 block w-full border-gray-300 rounded-md" required></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-sonho-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
+    <div id="edit-sonho-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Editar Sonho</h3><form id="edit-sonho-form"><input type="hidden" id="edit-sonho-id"><div class="space-y-4"><div><label for="edit-sonho-nome" class="block text-sm font-medium">Nome do Sonho</label><input type="text" id="edit-sonho-nome" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="edit-sonho-valor" class="block text-sm font-medium">Valor Total (R$)</label><input type="text" id="edit-sonho-valor" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="edit-sonho-data" class="block text-sm font-medium">Data Alvo</label><input type="date" id="edit-sonho-data" class="mt-1 block w-full border-gray-300 rounded-md" required></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-edit-sonho-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
     <div id="add-deposito-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-2">Adicionar Depósito</h3><p class="mb-6 text-gray-600">Para: <span id="deposito-sonho-nome" class="font-semibold"></span></p><form id="deposito-form"><input type="hidden" id="deposito-sonho-id"><div><label for="deposito-valor" class="block text-sm font-medium">Valor (R$)</label><input type="text" id="deposito-valor" placeholder="0,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-deposito-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Adicionar</button></div></form></div></div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         
-        let transactions = JSON.parse(localStorage.getItem('finance_transactions_v15')) || [];
-        let dreams = JSON.parse(localStorage.getItem('finance_dreams_v15')) || [];
+        let transactions = JSON.parse(localStorage.getItem('finance_transactions_v16')) || [];
+        let dreams = JSON.parse(localStorage.getItem('finance_dreams_v16')) || [];
         let currentDate = new Date();
 
-        const saveTransactions = () => localStorage.setItem('finance_transactions_v15', JSON.stringify(transactions));
-        const saveDreams = () => localStorage.setItem('finance_dreams_v15', JSON.stringify(dreams));
+        const saveTransactions = () => localStorage.setItem('finance_transactions_v16', JSON.stringify(transactions));
+        const saveDreams = () => localStorage.setItem('finance_dreams_v16', JSON.stringify(dreams));
         const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
         
@@ -299,6 +327,7 @@
             summaryCards: document.getElementById('summary-cards'),
             mainContent: document.getElementById('main-content'),
             transactionForm: document.getElementById('transaction-form'),
+            addTransactionBtn: document.getElementById('add-transaction-btn'),
             saldoAnteriorEl: document.getElementById('saldo-anterior'),
             totalReceitasEl: document.getElementById('total-receitas'),
             totalDespesasEl: document.getElementById('total-despesas'),
@@ -307,14 +336,25 @@
             fixedExpensesLabel: document.getElementById('fixed-expenses-label'),
             variableExpensesTotalEl: document.getElementById('variable-expenses-total'),
             transactionListEl: document.getElementById('transaction-list'),
+            receitaDetailsContainer: document.getElementById('receita-details-container'),
             expenseDetailsContainer: document.getElementById('expense-details-container'),
             typeSelector: document.getElementById('type-selector'),
+            receitaTypeSelector: document.getElementById('receita-type-selector'),
             gastoTypeSelector: document.getElementById('gasto-type-selector'),
+            receitaDateContainer: document.getElementById('receita-date-container'),
+            receitaDiaInput: document.getElementById('receita-dia'),
+            despesaDateContainer: document.getElementById('despesa-date-container'),
+            despesaDiaInput: document.getElementById('despesa-dia'),
             valorInput: document.getElementById('valor'),
             descricaoInput: document.getElementById('descricao'),
             chartLegend: document.getElementById('chart-legend'),
             expenseChartCanvas: document.getElementById('expense-chart').getContext('2d'),
-            // Edit Modal Elements
+            // Manage Fixed Modal
+            manageFixedBtn: document.getElementById('manage-fixed-btn'),
+            fixedTransactionsModal: document.getElementById('fixed-transactions-modal'),
+            fixedTransactionsList: document.getElementById('fixed-transactions-list'),
+            closeFixedModalBtn: document.getElementById('close-fixed-modal-btn'),
+            // Edit Transaction Modal
             editTransactionModal: document.getElementById('edit-transaction-modal'),
             editTransactionForm: document.getElementById('edit-transaction-form'),
             cancelEditBtn: document.getElementById('cancel-edit-btn'),
@@ -322,13 +362,22 @@
             editDescricaoInput: document.getElementById('edit-descricao'),
             editValorInput: document.getElementById('edit-valor'),
             editTypeSelector: document.getElementById('edit-type-selector'),
+            editReceitaDetailsContainer: document.getElementById('edit-receita-details-container'),
+            editReceitaTypeSelector: document.getElementById('edit-receita-type-selector'),
+            editReceitaDateContainer: document.getElementById('edit-receita-date-container'),
+            editReceitaDiaInput: document.getElementById('edit-receita-dia'),
             editExpenseDetailsContainer: document.getElementById('edit-expense-details-container'),
             editCategoriaSelect: document.getElementById('edit-categoria'),
             editGastoTypeSelector: document.getElementById('edit-gasto-type-selector'),
+            editDespesaDateContainer: document.getElementById('edit-despesa-date-container'),
+            editDespesaDiaInput: document.getElementById('edit-despesa-dia'),
             // Dream Elements
             sonosListEl: document.getElementById('sonhos-list'),
             addSonhoModal: document.getElementById('add-sonho-modal'),
             sonhoForm: document.getElementById('sonho-form'),
+            editSonhoModal: document.getElementById('edit-sonho-modal'),
+            editSonhoForm: document.getElementById('edit-sonho-form'),
+            cancelEditSonhoBtn: document.getElementById('cancel-edit-sonho-btn'),
             addDepositoModal: document.getElementById('add-deposito-modal'),
             depositoForm: document.getElementById('deposito-form'),
             sonhosRealizadosContainer: document.getElementById('sonhos-realizados-container'),
@@ -371,7 +420,7 @@
                 elements.mainContent.style.opacity = '1';
                 elements.currentMonthDisplay.textContent = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
                 
-                carryOverFixedExpenses(); 
+                carryOverFixedTransactions(); 
                 
                 const monthlyTransactions = transactions.filter(t => {
                     const tDate = new Date(t.date);
@@ -380,9 +429,9 @@
 
                 const previousBalance = calculatePreviousBalance(year, month);
                 const fixedForecast = calculateFixedForecast(year, month);
-                const isFirstMonth = transactions.length === monthlyTransactions.length;
+                const isFirstMonthEver = transactions.filter(t => new Date(t.date) < new Date(year, month, 1)).length === 0;
 
-                updateSummary(monthlyTransactions, previousBalance, fixedForecast, isFirstMonth);
+                updateSummary(monthlyTransactions, previousBalance, fixedForecast, isFirstMonthEver);
                 renderTransactions(monthlyTransactions);
                 updateExpenseChart(monthlyTransactions);
             };
@@ -396,7 +445,7 @@
             }
         };
         
-        const carryOverFixedExpenses = () => {
+        const carryOverFixedTransactions = () => {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             
@@ -414,17 +463,18 @@
             const prevMonth = prevMonthDate.getMonth();
             const prevYear = prevMonthDate.getFullYear();
 
-            const fixedExpensesFromLastMonth = transactions.filter(t => {
+            const fixedTransactionsFromLastMonth = transactions.filter(t => {
                 const tDate = new Date(t.date);
-                return tDate.getFullYear() === prevYear && tDate.getMonth() === prevMonth && t.gastoTipo === 'fixa';
+                return tDate.getFullYear() === prevYear && tDate.getMonth() === prevMonth && (t.gastoTipo === 'fixa' || t.receitaTipo === 'fixa');
             });
 
-            fixedExpensesFromLastMonth.forEach(t => {
-                const newTransaction = { ...t, id: Date.now() + Math.random(), date: new Date(year, month, new Date(t.date).getDate()).toISOString() };
+            fixedTransactionsFromLastMonth.forEach(t => {
+                const day = new Date(t.date).getDate();
+                const newTransaction = { ...t, id: Date.now() + Math.random(), date: new Date(year, month, day).toISOString() };
                 transactions.push(newTransaction);
             });
 
-            if (fixedExpensesFromLastMonth.length > 0) {
+            if (fixedTransactionsFromLastMonth.length > 0) {
                 saveTransactions();
             }
             localStorage.setItem(forecastKey, 'true');
@@ -447,7 +497,7 @@
                                .reduce((acc, t) => acc + (t.tipo === 'receita' ? t.valor : -t.valor), 0);
         };
 
-        const updateSummary = (monthlyTransactions, previousBalance, fixedForecast, isFirstMonth) => {
+        const updateSummary = (monthlyTransactions, previousBalance, fixedForecast, isFirstMonthEver) => {
             const monthlyRevenue = monthlyTransactions.filter(t => t.tipo === "receita").reduce((acc, t) => acc + t.valor, 0);
             const monthlyExpense = monthlyTransactions.filter(t => t.tipo === "despesa").reduce((acc, t) => acc + t.valor, 0);
             const fixedExpenseRealized = monthlyTransactions.filter(t => t.gastoTipo === "fixa").reduce((acc, t) => acc + t.valor, 0);
@@ -459,7 +509,7 @@
             elements.totalDespesasEl.textContent = formatCurrency(monthlyExpense);
             elements.saldoAtualEl.textContent = formatCurrency(finalBalance);
             
-            if (isFirstMonth) {
+            if (isFirstMonthEver) {
                 elements.fixedExpensesLabel.textContent = "Despesas Fixas (Realizadas)";
                 elements.fixedExpensesTotalEl.textContent = formatCurrency(fixedExpenseRealized);
             } else {
@@ -483,7 +533,9 @@
             }
             monthlyTransactions.slice().reverse().forEach(t => {
                 const isReceita = t.tipo === "receita";
-                const gastoTipoTag = t.tipo === 'despesa' ? `<span class="text-xs font-semibold ${t.gastoTipo === 'fixa' ? 'bg-orange-100 text-orange-800' : 'bg-yellow-100 text-yellow-800'} px-2 py-0.5 rounded-full">${t.gastoTipo}</span>` : '';
+                const tipoTag = isReceita 
+                    ? `<span class="text-xs font-semibold ${t.receitaTipo === 'fixa' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'} px-2 py-0.5 rounded-full">${t.receitaTipo}</span>`
+                    : `<span class="text-xs font-semibold ${t.gastoTipo === 'fixa' ? 'bg-orange-100 text-orange-800' : 'bg-yellow-100 text-yellow-800'} px-2 py-0.5 rounded-full">${t.gastoTipo}</span>`;
                 const li = document.createElement("li");
                 li.className = `p-3 rounded-md ${isReceita ? "bg-green-50" : "bg-red-50"} animate-fade-in`;
                 li.innerHTML = `
@@ -497,7 +549,7 @@
                                 <div class="flex items-center flex-wrap mt-1 text-sm text-gray-500">
                                     <span>${formatDate(t.date)}</span>
                                     ${!isReceita ? `<span class="mx-2 text-gray-300">&bull;</span><span>${t.categoria}</span>` : ''}
-                                    ${!isReceita ? `<span class="ml-2">${gastoTipoTag}</span>` : ''}
+                                    <span class="ml-2">${tipoTag}</span>
                                 </div>
                             </div>
                         </div>
@@ -550,14 +602,27 @@
             event.preventDefault();
             const tipo = elements.typeSelector.querySelector('.active').dataset.value;
             const valor = parseCurrency(elements.valorInput.value);
+            const receitaTipo = tipo === 'receita' ? elements.receitaTypeSelector.querySelector('.active').dataset.value : null;
+            const gastoTipo = tipo === 'despesa' ? elements.gastoTypeSelector.querySelector('.active').dataset.value : null;
+            
+            let day;
+            if (receitaTipo === 'fixa') {
+                day = parseInt(elements.receitaDiaInput.value);
+            } else if (gastoTipo === 'fixa') {
+                day = parseInt(elements.despesaDiaInput.value);
+            } else {
+                day = new Date().getDate();
+            }
+
             const transaction = { 
                 id: Date.now(), 
-                date: new Date(currentDate).toISOString(), 
+                date: new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString(),
                 descricao: elements.descricaoInput.value, 
                 valor: valor, 
                 tipo: tipo, 
                 categoria: tipo === 'despesa' ? document.getElementById("categoria").value : null,
-                gastoTipo: tipo === 'despesa' ? elements.gastoTypeSelector.querySelector('.active').dataset.value : null
+                gastoTipo: gastoTipo,
+                receitaTipo: receitaTipo
             };
             if (!transaction.descricao || isNaN(transaction.valor) || transaction.valor <= 0) return;
             transactions.push(transaction);
@@ -565,8 +630,9 @@
             updateUIGeral();
             elements.transactionForm.reset();
             elements.typeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
-            elements.typeSelector.querySelector('[data-value="receita"]').classList.add('active');
             elements.expenseDetailsContainer.classList.add('hidden');
+            elements.receitaDetailsContainer.classList.add('hidden');
+            elements.addTransactionBtn.disabled = true;
         };
 
         window.deleteTransaction = (id) => { transactions = transactions.filter(t => t.id !== id); saveTransactions(); updateUIGeral(); };
@@ -576,10 +642,13 @@
             if (!selectedOption) return;
             elements.typeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
             selectedOption.classList.add('active');
+            elements.addTransactionBtn.disabled = false;
             if (selectedOption.dataset.value === "despesa") {
                 elements.expenseDetailsContainer.classList.remove('hidden');
+                elements.receitaDetailsContainer.classList.add('hidden');
             } else {
                 elements.expenseDetailsContainer.classList.add('hidden');
+                elements.receitaDetailsContainer.classList.remove('hidden');
             }
         };
 
@@ -588,6 +657,23 @@
             if (!selectedOption) return;
             elements.gastoTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
             selectedOption.classList.add('active');
+            if (selectedOption.dataset.value === 'fixa') {
+                elements.despesaDateContainer.classList.remove('hidden');
+            } else {
+                elements.despesaDateContainer.classList.add('hidden');
+            }
+        };
+
+        const handleReceitaTipoChange = (event) => {
+            const selectedOption = event.target.closest('.segmented-control-option');
+            if (!selectedOption) return;
+            elements.receitaTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
+            selectedOption.classList.add('active');
+            if (selectedOption.dataset.value === 'fixa') {
+                elements.receitaDateContainer.classList.remove('hidden');
+            } else {
+                elements.receitaDateContainer.classList.add('hidden');
+            }
         };
 
         const handleToggleClick = (event) => { 
@@ -617,19 +703,36 @@
             elements.editTransactionId.value = id;
             elements.editDescricaoInput.value = transaction.descricao;
             elements.editValorInput.value = transaction.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
+            
             elements.editTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
             const typeOption = elements.editTypeSelector.querySelector(`[data-value="${transaction.tipo}"]`);
             if(typeOption) typeOption.classList.add('active');
 
             if (transaction.tipo === 'despesa') {
                 elements.editExpenseDetailsContainer.classList.remove('hidden');
+                elements.editReceitaDetailsContainer.classList.add('hidden');
                 elements.editCategoriaSelect.value = transaction.categoria;
                 elements.editGastoTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
                 const gastoTypeOption = elements.editGastoTypeSelector.querySelector(`[data-value="${transaction.gastoTipo}"]`);
                 if(gastoTypeOption) gastoTypeOption.classList.add('active');
+                if (transaction.gastoTipo === 'fixa') {
+                    elements.editDespesaDateContainer.classList.remove('hidden');
+                    elements.editDespesaDiaInput.value = new Date(transaction.date).getDate();
+                } else {
+                    elements.editDespesaDateContainer.classList.add('hidden');
+                }
             } else {
                 elements.editExpenseDetailsContainer.classList.add('hidden');
+                elements.editReceitaDetailsContainer.classList.remove('hidden');
+                elements.editReceitaTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
+                const receitaTypeOption = elements.editReceitaTypeSelector.querySelector(`[data-value="${transaction.receitaTipo}"]`);
+                if(receitaTypeOption) receitaTypeOption.classList.add('active');
+                 if (transaction.receitaTipo === 'fixa') {
+                    elements.editReceitaDateContainer.classList.remove('hidden');
+                    elements.editReceitaDiaInput.value = new Date(transaction.date).getDate();
+                } else {
+                    elements.editReceitaDateContainer.classList.add('hidden');
+                }
             }
 
             elements.editTransactionModal.classList.remove('hidden');
@@ -643,19 +746,64 @@
 
             const tipo = elements.editTypeSelector.querySelector('.active').dataset.value;
             const valor = parseCurrency(elements.editValorInput.value);
+            const receitaTipo = tipo === 'receita' ? elements.editReceitaTypeSelector.querySelector('.active').dataset.value : null;
+            const gastoTipo = tipo === 'despesa' ? elements.editGastoTypeSelector.querySelector('.active').dataset.value : null;
+            
+            let day;
+            if (receitaTipo === 'fixa') {
+                day = parseInt(elements.editReceitaDiaInput.value);
+            } else if (gastoTipo === 'fixa') {
+                day = parseInt(elements.editDespesaDiaInput.value);
+            } else {
+                day = new Date(transactions[transactionIndex].date).getDate();
+            }
+            const currentTransactionDate = new Date(transactions[transactionIndex].date);
+            const date = new Date(currentTransactionDate.getFullYear(), currentTransactionDate.getMonth(), day).toISOString();
 
             transactions[transactionIndex] = {
                 ...transactions[transactionIndex],
                 descricao: elements.editDescricaoInput.value,
                 valor: valor,
+                date: date,
                 tipo: tipo,
                 categoria: tipo === 'despesa' ? elements.editCategoriaSelect.value : null,
-                gastoTipo: tipo === 'despesa' ? elements.editGastoTypeSelector.querySelector('.active').dataset.value : null
+                gastoTipo: gastoTipo,
+                receitaTipo: receitaTipo
             };
 
             saveTransactions();
             updateUIGeral();
             elements.editTransactionModal.classList.add('hidden');
+        };
+        
+        const openManageFixedModal = () => {
+            elements.fixedTransactionsList.innerHTML = '';
+            const uniqueFixed = {};
+            // Pega as transações fixas de todos os tempos, dando preferência para a mais recente
+            transactions.filter(t => t.receitaTipo === 'fixa' || t.gastoTipo === 'fixa').forEach(t => {
+                uniqueFixed[t.descricao] = t;
+            });
+
+            const fixedList = Object.values(uniqueFixed);
+
+            if (fixedList.length === 0) {
+                elements.fixedTransactionsList.innerHTML = '<p class="text-center text-gray-500">Nenhuma transação fixa encontrada.</p>';
+            } else {
+                fixedList.forEach(t => {
+                    const isReceita = t.tipo === 'receita';
+                    const item = document.createElement('div');
+                    item.className = `p-3 rounded-md flex justify-between items-center ${isReceita ? 'bg-green-50' : 'bg-red-50'}`;
+                    item.innerHTML = `
+                        <div class="flex-grow">
+                            <p class="font-semibold">${t.descricao}</p>
+                            <p class="text-sm text-gray-600">${formatCurrency(t.valor)} - Todo dia ${new Date(t.date).getDate()}</p>
+                        </div>
+                        <button onclick="window.openEditModal(${t.id})" class="text-gray-400 hover:text-blue-600 transition-colors"><i class="fas fa-pen"></i></button>
+                    `;
+                    elements.fixedTransactionsList.appendChild(item);
+                });
+            }
+            elements.fixedTransactionsModal.classList.remove('hidden');
         };
 
         elements.tabGeralBtn.addEventListener('click', () => { elements.viewGeral.classList.remove('hidden'); elements.viewSonhos.classList.add('hidden'); elements.tabGeralBtn.classList.add('active'); elements.tabSonhosBtn.classList.remove('active'); });
@@ -663,6 +811,7 @@
         elements.transactionForm.addEventListener("submit", handleAddTransaction);
         elements.editTransactionForm.addEventListener("submit", handleEditTransaction);
         elements.typeSelector.addEventListener("click", handleTipoChange);
+        elements.receitaTypeSelector.addEventListener("click", handleReceitaTipoChange);
         elements.gastoTypeSelector.addEventListener("click", handleGastoTipoChange);
         elements.editTypeSelector.addEventListener('click', (e) => {
             const selectedOption = e.target.closest('.segmented-control-option');
@@ -671,8 +820,10 @@
             selectedOption.classList.add('active');
             if (selectedOption.dataset.value === "despesa") {
                 elements.editExpenseDetailsContainer.classList.remove('hidden');
+                elements.editReceitaDetailsContainer.classList.add('hidden');
             } else {
                 elements.editExpenseDetailsContainer.classList.add('hidden');
+                elements.editReceitaDetailsContainer.classList.remove('hidden');
             }
         });
         elements.editGastoTypeSelector.addEventListener('click', (e) => {
@@ -680,12 +831,30 @@
             if (!selectedOption) return;
             elements.editGastoTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
             selectedOption.classList.add('active');
+            if(selectedOption.dataset.value === 'fixa') {
+                elements.editDespesaDateContainer.classList.remove('hidden');
+            } else {
+                elements.editDespesaDateContainer.classList.add('hidden');
+            }
+        });
+        elements.editReceitaTypeSelector.addEventListener('click', (e) => {
+            const selectedOption = e.target.closest('.segmented-control-option');
+            if (!selectedOption) return;
+            elements.editReceitaTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
+            selectedOption.classList.add('active');
+            if(selectedOption.dataset.value === 'fixa') {
+                elements.editReceitaDateContainer.classList.remove('hidden');
+            } else {
+                elements.editReceitaDateContainer.classList.add('hidden');
+            }
         });
         document.addEventListener('click', handleToggleClick);
         elements.prevMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); updateUIGeral(true); });
         elements.nextMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); updateUIGeral(true); });
         elements.todayBtn.addEventListener('click', () => { currentDate = new Date(); updateUIGeral(true); });
         elements.cancelEditBtn.addEventListener('click', () => elements.editTransactionModal.classList.add('hidden'));
+        elements.manageFixedBtn.addEventListener('click', openManageFixedModal);
+        elements.closeFixedModalBtn.addEventListener('click', () => elements.fixedTransactionsModal.classList.add('hidden'));
         elements.valorInput.addEventListener('input', formatCurrencyInput);
         elements.sonhoValorInput.addEventListener('input', formatCurrencyInput);
         elements.depositoValorInput.addEventListener('input', formatCurrencyInput);
@@ -717,8 +886,8 @@
             if (window.sonhosScriptLoaded) return;
             window.sonhosScriptLoaded = true;
 
-            let dreams = JSON.parse(localStorage.getItem('finance_dreams_v14')) || [];
-            const saveDreams = () => localStorage.setItem('finance_dreams_v14', JSON.stringify(dreams));
+            let dreams = JSON.parse(localStorage.getItem('finance_dreams_v15')) || [];
+            const saveDreams = () => localStorage.setItem('finance_dreams_v15', JSON.stringify(dreams));
             const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
             const parseCurrency = (value) => {
@@ -730,6 +899,9 @@
                 sonosListEl: document.getElementById('sonhos-list'),
                 addSonhoModal: document.getElementById('add-sonho-modal'),
                 sonhoForm: document.getElementById('sonho-form'),
+                editSonhoModal: document.getElementById('edit-sonho-modal'),
+                editSonhoForm: document.getElementById('edit-sonho-form'),
+                cancelEditSonhoBtn: document.getElementById('cancel-edit-sonho-btn'),
                 addDepositoModal: document.getElementById('add-deposito-modal'),
                 depositoForm: document.getElementById('deposito-form'),
                 sonhosRealizadosContainer: document.getElementById('sonhos-realizados-container'),
@@ -757,7 +929,7 @@
                 const idealPorMes = mesesRestantes > 0 ? restante / mesesRestantes : 0;
                 const card = document.createElement('div');
                 card.className = `card p-6 space-y-4 animate-slide-up`;
-                card.innerHTML = `<div><div class="flex justify-between items-start"><h4 class="text-2xl font-bold text-gray-800">${dream.nome}</h4><button onclick="window.deleteSonho(${dream.id})" class="text-gray-400 hover:text-red-600 transition-colors">&times;</button></div><p class="text-gray-500">Objetivo: <span class="font-semibold">${formatCurrency(dream.valor)}</span></p></div><div><div class="flex justify-between mb-1"><span class="font-medium text-indigo-700">${formatCurrency(totalDepositado)}</span><span class="font-medium text-indigo-700">${progresso.toFixed(1)}%</span></div><div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-indigo-600 h-4 rounded-full transition-all duration-500" style="width: ${progresso}%"></div></div><p class="text-sm text-right text-gray-600 mt-1">Faltam ${formatCurrency(Math.max(0, restante))}</p></div><div class="border-t pt-4 space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Iniciada em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Ideal por mês:</span><span class="font-semibold">${formatCurrency(Math.max(0, idealPorMes))}</span></div></div><div class="h-24"><canvas id="chart-sonho-${dream.id}"></canvas></div><button onclick="window.openDepositoModal(${dream.id})" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center transition-colors"><i class="fas fa-plus-circle mr-2"></i>Adicionar Depósito</button>`;
+                card.innerHTML = `<div><div class="flex justify-between items-start"><h4 class="text-2xl font-bold text-gray-800">${dream.nome}</h4><div class="flex items-center"><button onclick="window.openEditSonhoModal(${dream.id})" class="text-gray-400 hover:text-blue-600 transition-colors mr-3"><i class="fas fa-pen"></i></button><button onclick="window.deleteSonho(${dream.id})" class="text-gray-400 hover:text-red-600 transition-colors">&times;</button></div></div><p class="text-gray-500">Objetivo: <span class="font-semibold">${formatCurrency(dream.valor)}</span></p></div><div><div class="flex justify-between mb-1"><span class="font-medium text-indigo-700">${formatCurrency(totalDepositado)}</span><span class="font-medium text-indigo-700">${progresso.toFixed(1)}%</span></div><div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-indigo-600 h-4 rounded-full transition-all duration-500" style="width: ${progresso}%"></div></div><p class="text-sm text-right text-gray-600 mt-1">Faltam ${formatCurrency(Math.max(0, restante))}</p></div><div class="border-t pt-4 space-y-3"><div class="flex justify-between text-sm"><span class="text-gray-500">Iniciada em:</span><span class="font-semibold">${formatDate(dream.createdAt)}</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">Ideal por mês:</span><span class="font-semibold">${formatCurrency(Math.max(0, idealPorMes))}</span></div></div><div class="h-24"><canvas id="chart-sonho-${dream.id}"></canvas></div><button onclick="window.openDepositoModal(${dream.id})" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center transition-colors"><i class="fas fa-plus-circle mr-2"></i>Adicionar Depósito</button>`;
                 elements.sonosListEl.appendChild(card);
                 if (dream.deposits.length > 0) { const chartCtx = document.getElementById(`chart-sonho-${dream.id}`).getContext('2d'); let cumulativeAmount = 0; const chartData = dream.deposits.map(d => cumulativeAmount += d.valor); const chartLabels = dream.deposits.map(d => formatDate(d.data)); new Chart(chartCtx, { type: 'line', data: { labels: chartLabels, datasets: [{ label: 'Evolução', data: chartData, backgroundColor: 'rgba(79, 70, 229, 0.1)', borderColor: '#4f46e5', borderWidth: 2, tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } } }); }
             };
@@ -770,10 +942,37 @@
             };
             window.openDepositoModal = (id) => { const dream = dreams.find(d => d.id === id); document.getElementById('deposito-sonho-nome').textContent = dream.nome; document.getElementById('deposito-sonho-id').value = id; elements.addDepositoModal.classList.remove('hidden'); };
             window.deleteSonho = (id) => { if (confirm('Tem certeza que deseja apagar este sonho? A ação não pode ser desfeita.')) { dreams = dreams.filter(d => d.id !== id); saveDreams(); renderSonhosList(); } };
+            window.openEditSonhoModal = (id) => {
+                const dream = dreams.find(d => d.id === id);
+                if (!dream) return;
+                document.getElementById('edit-sonho-id').value = dream.id;
+                document.getElementById('edit-sonho-nome').value = dream.nome;
+                document.getElementById('edit-sonho-valor').value = dream.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                document.getElementById('edit-sonho-data').value = new Date(dream.dataAlvo).toISOString().split('T')[0];
+                elements.editSonhoModal.classList.remove('hidden');
+            };
+            const handleEditSonho = (e) => {
+                e.preventDefault();
+                const id = parseInt(document.getElementById('edit-sonho-id').value);
+                const dreamIndex = dreams.findIndex(d => d.id === id);
+                if (dreamIndex === -1) return;
+                dreams[dreamIndex] = {
+                    ...dreams[dreamIndex],
+                    nome: document.getElementById('edit-sonho-nome').value,
+                    valor: parseCurrency(document.getElementById('edit-sonho-valor').value),
+                    dataAlvo: document.getElementById('edit-sonho-data').value,
+                };
+                saveDreams();
+                renderSonhosList();
+                elements.editSonhoModal.classList.add('hidden');
+            };
+
             elements.addSonhoBtn.addEventListener('click', () => elements.addSonhoModal.classList.remove('hidden'));
             elements.cancelSonhoBtn.addEventListener('click', () => elements.addSonhoModal.classList.add('hidden'));
+            elements.cancelEditSonhoBtn.addEventListener('click', () => elements.editSonhoModal.classList.add('hidden'));
             elements.cancelDepositoBtn.addEventListener('click', () => elements.addDepositoModal.classList.add('hidden'));
             elements.sonhoForm.addEventListener('submit', (e) => { e.preventDefault(); const valor = parseCurrency(document.getElementById('sonho-valor').value); dreams.push({ id: Date.now(), nome: document.getElementById('sonho-nome').value, valor: valor, dataAlvo: document.getElementById('sonho-data').value, createdAt: new Date().toISOString(), deposits: [], completed: false }); saveDreams(); renderSonhosList(); elements.sonhoForm.reset(); elements.addSonhoModal.classList.add('hidden'); });
+            elements.editSonhoForm.addEventListener('submit', handleEditSonho);
             elements.depositoForm.addEventListener('submit', (e) => { e.preventDefault(); const dreamId = parseInt(document.getElementById('deposito-sonho-id').value); const valor = parseCurrency(document.getElementById('deposito-valor').value); const dream = dreams.find(d => d.id === dreamId); if (dream && valor > 0) { const totalAnterior = dream.deposits.reduce((acc, d) => acc + d.valor, 0); dream.deposits.push({ id: Date.now(), valor: valor, data: new Date().toISOString() }); const totalAtual = totalAnterior + valor; if (totalAtual >= dream.valor && !dream.completed) { dream.completed = true; confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } }); } saveDreams(); renderSonhosList(); } elements.depositoForm.reset(); elements.addDepositoModal.classList.add('hidden'); });
             
             renderSonhosList();
