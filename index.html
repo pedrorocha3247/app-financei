@@ -166,11 +166,11 @@
                 <div id="forecast-content" class="collapsible-content collapsed pt-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <p class="text-sm text-gray-500">Despesas Fixas</p>
+                            <p id="fixed-expenses-label" class="text-sm text-gray-500">Despesas Fixas</p>
                             <p id="fixed-expenses-total" class="text-2xl font-bold text-orange-600">R$ 0,00</p>
                         </div>
                         <div>
-                            <p class="text-sm text-gray-500">Despesas Variáveis</p>
+                            <p class="text-sm text-gray-500">Despesas Variáveis (Realizadas)</p>
                             <p id="variable-expenses-total" class="text-2xl font-bold text-yellow-600">R$ 0,00</p>
                         </div>
                     </div>
@@ -222,8 +222,9 @@
                             <h3 class="text-xl font-bold">Despesas por Categoria</h3>
                             <i class="fas fa-chevron-down toggle-icon collapsed"></i>
                         </div>
-                        <div id="chart-content" class="collapsible-content collapsed pt-4" style="height: 250px;">
-                            <canvas id="expense-chart"></canvas>
+                        <div id="chart-content" class="collapsible-content collapsed pt-4 flex flex-col md:flex-row items-center gap-4">
+                            <div class="w-full md:w-1/2 h-48 relative"><canvas id="expense-chart"></canvas></div>
+                            <div id="chart-legend" class="w-full md:w-1/2"></div>
                         </div>
                     </div>
                 </div>
@@ -267,27 +268,22 @@
     </div>
 
     <!-- Modais -->
+    <div id="edit-transaction-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Editar Transação</h3><form id="edit-transaction-form" class="space-y-4"><input type="hidden" id="edit-transaction-id"><div><label for="edit-descricao" class="block text-sm font-medium">Descrição</label><input type="text" id="edit-descricao" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="edit-valor" class="block text-sm font-medium">Valor (R$)</label><input type="text" id="edit-valor" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label class="block text-sm font-medium">Tipo</label><div id="edit-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="receita"><i class="fas fa-plus-circle mr-2"></i>Receita</div><div class="segmented-control-option" data-value="despesa"><i class="fas fa-minus-circle mr-2"></i>Despesa</div></div></div><div id="edit-expense-details-container" class="hidden space-y-4"><div><label class="block text-sm font-medium">Categoria</label><select id="edit-categoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option><option>Saúde</option><option>Outros</option></select></div><div><label class="block text-sm font-medium">Tipo de Gasto</label><div id="edit-gasto-type-selector" class="segmented-control mt-1"><div class="segmented-control-option" data-value="variavel">Variável</div><div class="segmented-control-option" data-value="fixa">Fixa</div></div></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-edit-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
     <div id="add-sonho-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-6">Qual é o seu novo sonho?</h3><form id="sonho-form"><div class="space-y-4"><div><label for="sonho-nome" class="block text-sm font-medium">Nome do Sonho</label><input type="text" id="sonho-nome" placeholder="Ex: Carro Novo" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-valor" class="block text-sm font-medium">Valor Total (R$)</label><input type="text" id="sonho-valor" placeholder="0,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div><label for="sonho-data" class="block text-sm font-medium">Data Alvo</label><input type="date" id="sonho-data" class="mt-1 block w-full border-gray-300 rounded-md" required></div></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-sonho-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Salvar</button></div></form></div></div>
     <div id="add-deposito-modal" class="modal-backdrop hidden"><div class="card p-8 rounded-lg w-11/12 md:w-1/3"><h3 class="text-2xl font-bold mb-2">Adicionar Depósito</h3><p class="mb-6 text-gray-600">Para: <span id="deposito-sonho-nome" class="font-semibold"></span></p><form id="deposito-form"><input type="hidden" id="deposito-sonho-id"><div><label for="deposito-valor" class="block text-sm font-medium">Valor (R$)</label><input type="text" id="deposito-valor" placeholder="0,00" class="mt-1 block w-full border-gray-300 rounded-md" required></div><div class="mt-6 flex justify-end space-x-4"><button type="button" id="cancel-deposito-btn" class="bg-gray-200 font-bold py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="btn-primary font-bold py-2 px-4 rounded-md">Adicionar</button></div></form></div></div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         
-        // =================================================================
-        // 1. ESTADO DA APLICAÇÃO E FUNÇÕES GLOBAIS
-        // =================================================================
-        let transactions = JSON.parse(localStorage.getItem('finance_transactions_v13')) || [];
-        let dreams = JSON.parse(localStorage.getItem('finance_dreams_v13')) || [];
+        let transactions = JSON.parse(localStorage.getItem('finance_transactions_v15')) || [];
+        let dreams = JSON.parse(localStorage.getItem('finance_dreams_v15')) || [];
         let currentDate = new Date();
 
-        const saveTransactions = () => localStorage.setItem('finance_transactions_v13', JSON.stringify(transactions));
-        const saveDreams = () => localStorage.setItem('finance_dreams_v13', JSON.stringify(dreams));
+        const saveTransactions = () => localStorage.setItem('finance_transactions_v15', JSON.stringify(transactions));
+        const saveDreams = () => localStorage.setItem('finance_dreams_v15', JSON.stringify(dreams));
         const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
         
-        // =================================================================
-        // 2. SELETORES DE ELEMENTOS DO DOM
-        // =================================================================
         const elements = {
             splashScreen: document.getElementById('splash-screen'),
             startAppBtn: document.getElementById('start-app-btn'),
@@ -308,11 +304,28 @@
             totalDespesasEl: document.getElementById('total-despesas'),
             saldoAtualEl: document.getElementById('saldo-atual'),
             fixedExpensesTotalEl: document.getElementById('fixed-expenses-total'),
+            fixedExpensesLabel: document.getElementById('fixed-expenses-label'),
             variableExpensesTotalEl: document.getElementById('variable-expenses-total'),
             transactionListEl: document.getElementById('transaction-list'),
             expenseDetailsContainer: document.getElementById('expense-details-container'),
             typeSelector: document.getElementById('type-selector'),
             gastoTypeSelector: document.getElementById('gasto-type-selector'),
+            valorInput: document.getElementById('valor'),
+            descricaoInput: document.getElementById('descricao'),
+            chartLegend: document.getElementById('chart-legend'),
+            expenseChartCanvas: document.getElementById('expense-chart').getContext('2d'),
+            // Edit Modal Elements
+            editTransactionModal: document.getElementById('edit-transaction-modal'),
+            editTransactionForm: document.getElementById('edit-transaction-form'),
+            cancelEditBtn: document.getElementById('cancel-edit-btn'),
+            editTransactionId: document.getElementById('edit-transaction-id'),
+            editDescricaoInput: document.getElementById('edit-descricao'),
+            editValorInput: document.getElementById('edit-valor'),
+            editTypeSelector: document.getElementById('edit-type-selector'),
+            editExpenseDetailsContainer: document.getElementById('edit-expense-details-container'),
+            editCategoriaSelect: document.getElementById('edit-categoria'),
+            editGastoTypeSelector: document.getElementById('edit-gasto-type-selector'),
+            // Dream Elements
             sonosListEl: document.getElementById('sonhos-list'),
             addSonhoModal: document.getElementById('add-sonho-modal'),
             sonhoForm: document.getElementById('sonho-form'),
@@ -323,18 +336,13 @@
             addSonhoBtn: document.getElementById('add-sonho-btn'),
             cancelSonhoBtn: document.getElementById('cancel-sonho-btn'),
             cancelDepositoBtn: document.getElementById('cancel-deposito-btn'),
-            valorInput: document.getElementById('valor'),
             sonhoValorInput: document.getElementById('sonho-valor'),
             depositoValorInput: document.getElementById('deposito-valor'),
-            descricaoInput: document.getElementById('descricao'),
             sonhoNomeInput: document.getElementById('sonho-nome'),
         };
 
         let expenseChart;
 
-        // =================================================================
-        // 3. FUNÇÕES DE FORMATAÇÃO E UTILIDADES
-        // =================================================================
         const formatCurrencyInput = (event) => {
             let value = event.target.value.replace(/\D/g, '');
             if (value === '') { event.target.value = ''; return; }
@@ -354,11 +362,7 @@
             }
         };
 
-        // =================================================================
-        // 4. FUNÇÕES DE ATUALIZAÇÃO DA INTERFACE (UI)
-        // =================================================================
         const updateUIGeral = (isMonthChange = false) => {
-            runMonthlyForecast();
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
 
@@ -366,12 +370,19 @@
                 elements.summaryCards.style.opacity = '1';
                 elements.mainContent.style.opacity = '1';
                 elements.currentMonthDisplay.textContent = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+                
+                carryOverFixedExpenses(); 
+                
                 const monthlyTransactions = transactions.filter(t => {
                     const tDate = new Date(t.date);
                     return tDate.getFullYear() === year && tDate.getMonth() === month;
                 });
+
                 const previousBalance = calculatePreviousBalance(year, month);
-                updateSummary(monthlyTransactions, previousBalance);
+                const fixedForecast = calculateFixedForecast(year, month);
+                const isFirstMonth = transactions.length === monthlyTransactions.length;
+
+                updateSummary(monthlyTransactions, previousBalance, fixedForecast, isFirstMonth);
                 renderTransactions(monthlyTransactions);
                 updateExpenseChart(monthlyTransactions);
             };
@@ -385,14 +396,19 @@
             }
         };
         
-        const runMonthlyForecast = () => {
+        const carryOverFixedExpenses = () => {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-            const forecastKey = `forecast_${year}-${month}`;
+            
+            const hasRevenueThisMonth = transactions.some(t => {
+                const tDate = new Date(t.date);
+                return tDate.getFullYear() === year && tDate.getMonth() === month && t.tipo === 'receita';
+            });
 
-            if (localStorage.getItem(forecastKey)) {
-                return; // Previsão já executada para este mês
-            }
+            if (!hasRevenueThisMonth) return;
+
+            const forecastKey = `forecast_carried_over_${year}-${month}`;
+            if (localStorage.getItem(forecastKey)) return;
 
             const prevMonthDate = new Date(year, month, 0);
             const prevMonth = prevMonthDate.getMonth();
@@ -413,6 +429,17 @@
             }
             localStorage.setItem(forecastKey, 'true');
         };
+        
+        const calculateFixedForecast = (year, month) => {
+             const prevMonthDate = new Date(year, month, 0);
+            const prevMonth = prevMonthDate.getMonth();
+            const prevYear = prevMonthDate.getFullYear();
+
+            return transactions.filter(t => {
+                const tDate = new Date(t.date);
+                return tDate.getFullYear() === prevYear && tDate.getMonth() === prevMonth && t.gastoTipo === 'fixa';
+            }).reduce((acc, t) => acc + t.valor, 0);
+        }
 
         const calculatePreviousBalance = (year, month) => {
             const firstDayOfCurrentMonth = new Date(year, month, 1);
@@ -420,10 +447,10 @@
                                .reduce((acc, t) => acc + (t.tipo === 'receita' ? t.valor : -t.valor), 0);
         };
 
-        const updateSummary = (monthlyTransactions, previousBalance) => {
+        const updateSummary = (monthlyTransactions, previousBalance, fixedForecast, isFirstMonth) => {
             const monthlyRevenue = monthlyTransactions.filter(t => t.tipo === "receita").reduce((acc, t) => acc + t.valor, 0);
             const monthlyExpense = monthlyTransactions.filter(t => t.tipo === "despesa").reduce((acc, t) => acc + t.valor, 0);
-            const fixedExpense = monthlyTransactions.filter(t => t.gastoTipo === "fixa").reduce((acc, t) => acc + t.valor, 0);
+            const fixedExpenseRealized = monthlyTransactions.filter(t => t.gastoTipo === "fixa").reduce((acc, t) => acc + t.valor, 0);
             const variableExpense = monthlyTransactions.filter(t => t.gastoTipo === "variavel").reduce((acc, t) => acc + t.valor, 0);
             const finalBalance = previousBalance + monthlyRevenue - monthlyExpense;
 
@@ -431,7 +458,15 @@
             elements.totalReceitasEl.textContent = formatCurrency(monthlyRevenue);
             elements.totalDespesasEl.textContent = formatCurrency(monthlyExpense);
             elements.saldoAtualEl.textContent = formatCurrency(finalBalance);
-            elements.fixedExpensesTotalEl.textContent = formatCurrency(fixedExpense);
+            
+            if (isFirstMonth) {
+                elements.fixedExpensesLabel.textContent = "Despesas Fixas (Realizadas)";
+                elements.fixedExpensesTotalEl.textContent = formatCurrency(fixedExpenseRealized);
+            } else {
+                elements.fixedExpensesLabel.textContent = "Despesas Fixas (Previstas)";
+                elements.fixedExpensesTotalEl.textContent = formatCurrency(fixedForecast);
+            }
+            
             elements.variableExpensesTotalEl.textContent = formatCurrency(variableExpense);
 
             elements.saldoAnteriorEl.classList.toggle("text-red-500", previousBalance < 0);
@@ -450,25 +485,30 @@
                 const isReceita = t.tipo === "receita";
                 const gastoTipoTag = t.tipo === 'despesa' ? `<span class="text-xs font-semibold ${t.gastoTipo === 'fixa' ? 'bg-orange-100 text-orange-800' : 'bg-yellow-100 text-yellow-800'} px-2 py-0.5 rounded-full">${t.gastoTipo}</span>` : '';
                 const li = document.createElement("li");
-                li.className = `flex justify-between items-center p-3 rounded-md ${isReceita ? "bg-green-50" : "bg-red-50"} animate-fade-in`;
+                li.className = `p-3 rounded-md ${isReceita ? "bg-green-50" : "bg-red-50"} animate-fade-in`;
                 li.innerHTML = `
-                    <div class="flex items-center flex-grow">
-                        <div class="mr-3 p-2 rounded-full ${isReceita ? "bg-green-200" : "bg-red-200"}">
-                            <i class="fas ${isReceita ? "fa-plus text-green-700" : "fa-minus text-red-700"}"></i>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex items-center flex-grow mb-2 sm:mb-0">
+                            <div class="mr-3 p-2 rounded-full ${isReceita ? "bg-green-200" : "bg-red-200"}">
+                                <i class="fas ${isReceita ? "fa-plus text-green-700" : "fa-minus text-red-700"}"></i>
+                            </div>
+                            <div class="flex-grow">
+                                <span class="font-semibold">${t.descricao}</span>
+                                <div class="flex items-center flex-wrap mt-1 text-sm text-gray-500">
+                                    <span>${formatDate(t.date)}</span>
+                                    ${!isReceita ? `<span class="mx-2 text-gray-300">&bull;</span><span>${t.categoria}</span>` : ''}
+                                    ${!isReceita ? `<span class="ml-2">${gastoTipoTag}</span>` : ''}
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex-grow">
-                            <span class="font-semibold">${t.descricao}</span>
-                            <div class="flex items-center mt-1 text-sm text-gray-500">
-                                <span>${formatDate(t.date)}</span>
-                                ${!isReceita ? `<span class="mx-2 text-gray-300">&bull;</span><span>${t.categoria}</span>` : ''}
-                                ${!isReceita ? `<span class="ml-2">${gastoTipoTag}</span>` : ''}
+                        <div class="flex items-center justify-end">
+                            <span class="font-bold text-lg ${isReceita ? "text-green-600" : "text-red-600"}">${formatCurrency(t.valor)}</span>
+                            <div class="flex ml-4">
+                                <button onclick="window.openEditModal(${t.id})" class="text-gray-400 hover:text-blue-600 transition-colors"><i class="fas fa-pen"></i></button>
+                                <button onclick="window.deleteTransaction(${t.id})" class="ml-3 text-gray-400 hover:text-red-600 transition-colors">&times;</button>
                             </div>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <span class="font-bold ${isReceita ? "text-green-600" : "text-red-600"}">${formatCurrency(t.valor)}</span>
-                    </div>
-                    <button onclick="window.deleteTransaction(${t.id})" class="ml-4 text-gray-400 hover:text-red-600 transition-colors self-center">&times;</button>
                 `;
                 elements.transactionListEl.appendChild(li);
             });
@@ -476,13 +516,36 @@
 
         const updateExpenseChart = (monthlyTransactions) => {
             const expenseData = monthlyTransactions.filter(t => t.tipo === "despesa").reduce((acc, t) => { acc[t.categoria] = (acc[t.categoria] || 0) + t.valor; return acc; }, {});
+            const totalExpenses = Object.values(expenseData).reduce((sum, val) => sum + val, 0);
+            const chartLabels = Object.keys(expenseData);
+            const chartValues = Object.values(expenseData);
+            const backgroundColors = ["#4f46e5", "#f97316", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6"];
+            
             if (expenseChart) expenseChart.destroy();
-            expenseChart = new Chart(elements.expenseChartCanvas, { type: "doughnut", data: { labels: Object.keys(expenseData), datasets: [{ data: Object.values(expenseData), backgroundColor: ["#4f46e5", "#f97316", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6"], borderColor: "#ffffff", borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } } });
+            
+            elements.chartLegend.innerHTML = '';
+            if (chartLabels.length > 0) {
+                const legendList = document.createElement('ul');
+                legendList.className = 'space-y-2';
+                chartLabels.forEach((label, index) => {
+                    const percentage = totalExpenses > 0 ? ((chartValues[index] / totalExpenses) * 100).toFixed(1) : 0;
+                    const li = document.createElement('li');
+                    li.className = 'flex items-center text-sm';
+                    li.innerHTML = `
+                        <span class="w-3 h-3 rounded-full mr-2" style="background-color: ${backgroundColors[index % backgroundColors.length]}"></span>
+                        <span class="flex-grow font-medium">${label}</span>
+                        <span class="font-bold">${percentage}%</span>
+                    `;
+                    legendList.appendChild(li);
+                });
+                elements.chartLegend.appendChild(legendList);
+            } else {
+                elements.chartLegend.innerHTML = '<p class="text-center text-gray-500">Sem dados de despesa para exibir.</p>';
+            }
+
+            expenseChart = new Chart(elements.expenseChartCanvas, { type: "doughnut", data: { labels: chartLabels, datasets: [{ data: chartValues, backgroundColor: backgroundColors, borderColor: "#ffffff", borderWidth: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         };
         
-        // =================================================================
-        // 5. MANIPULADORES DE EVENTOS (EVENT HANDLERS)
-        // =================================================================
         const handleAddTransaction = (event) => {
             event.preventDefault();
             const tipo = elements.typeSelector.querySelector('.active').dataset.value;
@@ -527,29 +590,110 @@
             selectedOption.classList.add('active');
         };
 
-        const handleToggleClick = (event) => { const header = event.target.closest('[data-toggle]'); if (!header) return; const contentId = header.getAttribute('data-toggle'); const contentElement = document.getElementById(contentId); const iconElement = header.querySelector('.toggle-icon'); contentElement.classList.toggle('collapsed'); iconElement.classList.toggle('collapsed'); };
+        const handleToggleClick = (event) => { 
+            const header = event.target.closest('[data-toggle]'); 
+            if (!header) return; 
+            const contentId = header.getAttribute('data-toggle'); 
+            const contentElement = document.getElementById(contentId); 
+            const iconElement = header.querySelector('.toggle-icon'); 
+            contentElement.classList.toggle('collapsed'); 
+            iconElement.classList.toggle('collapsed');
+            
+            if (contentId === 'chart-content' && !contentElement.classList.contains('collapsed')) {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const monthlyTransactions = transactions.filter(t => {
+                    const tDate = new Date(t.date);
+                    return tDate.getFullYear() === year && tDate.getMonth() === month;
+                });
+                updateExpenseChart(monthlyTransactions);
+            }
+        };
         
-        // =================================================================
-        // 6. REGISTRO DE EVENTOS (EVENT LISTENERS)
-        // =================================================================
+        window.openEditModal = (id) => {
+            const transaction = transactions.find(t => t.id === id);
+            if (!transaction) return;
+
+            elements.editTransactionId.value = id;
+            elements.editDescricaoInput.value = transaction.descricao;
+            elements.editValorInput.value = transaction.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            elements.editTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
+            const typeOption = elements.editTypeSelector.querySelector(`[data-value="${transaction.tipo}"]`);
+            if(typeOption) typeOption.classList.add('active');
+
+            if (transaction.tipo === 'despesa') {
+                elements.editExpenseDetailsContainer.classList.remove('hidden');
+                elements.editCategoriaSelect.value = transaction.categoria;
+                elements.editGastoTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
+                const gastoTypeOption = elements.editGastoTypeSelector.querySelector(`[data-value="${transaction.gastoTipo}"]`);
+                if(gastoTypeOption) gastoTypeOption.classList.add('active');
+            } else {
+                elements.editExpenseDetailsContainer.classList.add('hidden');
+            }
+
+            elements.editTransactionModal.classList.remove('hidden');
+        };
+
+        const handleEditTransaction = (event) => {
+            event.preventDefault();
+            const id = parseInt(elements.editTransactionId.value);
+            const transactionIndex = transactions.findIndex(t => t.id === id);
+            if (transactionIndex === -1) return;
+
+            const tipo = elements.editTypeSelector.querySelector('.active').dataset.value;
+            const valor = parseCurrency(elements.editValorInput.value);
+
+            transactions[transactionIndex] = {
+                ...transactions[transactionIndex],
+                descricao: elements.editDescricaoInput.value,
+                valor: valor,
+                tipo: tipo,
+                categoria: tipo === 'despesa' ? elements.editCategoriaSelect.value : null,
+                gastoTipo: tipo === 'despesa' ? elements.editGastoTypeSelector.querySelector('.active').dataset.value : null
+            };
+
+            saveTransactions();
+            updateUIGeral();
+            elements.editTransactionModal.classList.add('hidden');
+        };
+
         elements.tabGeralBtn.addEventListener('click', () => { elements.viewGeral.classList.remove('hidden'); elements.viewSonhos.classList.add('hidden'); elements.tabGeralBtn.classList.add('active'); elements.tabSonhosBtn.classList.remove('active'); });
         elements.tabSonhosBtn.addEventListener('click', () => { elements.viewGeral.classList.add('hidden'); elements.viewSonhos.classList.remove('hidden'); elements.tabGeralBtn.classList.remove('active'); elements.tabSonhosBtn.classList.add('active'); renderSonhosList(); });
         elements.transactionForm.addEventListener("submit", handleAddTransaction);
+        elements.editTransactionForm.addEventListener("submit", handleEditTransaction);
         elements.typeSelector.addEventListener("click", handleTipoChange);
         elements.gastoTypeSelector.addEventListener("click", handleGastoTipoChange);
+        elements.editTypeSelector.addEventListener('click', (e) => {
+            const selectedOption = e.target.closest('.segmented-control-option');
+            if (!selectedOption) return;
+            elements.editTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
+            selectedOption.classList.add('active');
+            if (selectedOption.dataset.value === "despesa") {
+                elements.editExpenseDetailsContainer.classList.remove('hidden');
+            } else {
+                elements.editExpenseDetailsContainer.classList.add('hidden');
+            }
+        });
+        elements.editGastoTypeSelector.addEventListener('click', (e) => {
+            const selectedOption = e.target.closest('.segmented-control-option');
+            if (!selectedOption) return;
+            elements.editGastoTypeSelector.querySelectorAll('.segmented-control-option').forEach(opt => opt.classList.remove('active'));
+            selectedOption.classList.add('active');
+        });
         document.addEventListener('click', handleToggleClick);
         elements.prevMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); updateUIGeral(true); });
         elements.nextMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); updateUIGeral(true); });
         elements.todayBtn.addEventListener('click', () => { currentDate = new Date(); updateUIGeral(true); });
+        elements.cancelEditBtn.addEventListener('click', () => elements.editTransactionModal.classList.add('hidden'));
         elements.valorInput.addEventListener('input', formatCurrencyInput);
         elements.sonhoValorInput.addEventListener('input', formatCurrencyInput);
         elements.depositoValorInput.addEventListener('input', formatCurrencyInput);
+        elements.editValorInput.addEventListener('input', formatCurrencyInput);
         elements.descricaoInput.addEventListener('input', capitalizeInput);
         elements.sonhoNomeInput.addEventListener('input', capitalizeInput);
+        elements.editDescricaoInput.addEventListener('input', capitalizeInput);
         
-        // =================================================================
-        // 7. INICIALIZAÇÃO DA APLICAÇÃO
-        // =================================================================
         setTimeout(() => {
             elements.startAppBtn.style.opacity = '1';
             elements.startAppBtn.style.transform = 'scale(1)';
@@ -573,8 +717,8 @@
             if (window.sonhosScriptLoaded) return;
             window.sonhosScriptLoaded = true;
 
-            let dreams = JSON.parse(localStorage.getItem('finance_dreams_v12')) || [];
-            const saveDreams = () => localStorage.setItem('finance_dreams_v12', JSON.stringify(dreams));
+            let dreams = JSON.parse(localStorage.getItem('finance_dreams_v14')) || [];
+            const saveDreams = () => localStorage.setItem('finance_dreams_v14', JSON.stringify(dreams));
             const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
             const parseCurrency = (value) => {
